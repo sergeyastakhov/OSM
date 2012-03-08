@@ -1,0 +1,2 @@
+@call mvn install:install-file -DgroupId=org.openstreetmap.osmosis -DartifactId=osmosis -Dversion=0.35 -Dpackaging=jar -Dfile=D:\OSM\osmosis-0.35\osmosis.jar -Dsources=D:\OSM\osmosis-0.35\src\osmosis-sources.jar -DpomFile=D:\OSM\osmosis-0.35\pom.xml
+@call mvn install:install-file -DgroupId=org.openstreetmap.osmosis -DartifactId=osmosis -Dversion=0.35 -Dpackaging=jar -Dclassifier=sources -Dfile=D:\OSM\osmosis-0.35\src\osmosis-sources.jar
