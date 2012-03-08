@@ -14,5 +14,12 @@ public enum ElementErrorType
   OPENING_DATE_FORMAT_ERROR,
   CHECK_DATE_FORMAT_ERROR,
   OPENING_DATE_PASSED,
-  CHECK_DATE_TOO_OLD
+  CHECK_DATE_TOO_OLD;
+
+  public String toXMLTag(int counter)
+  {
+    String tag = name().toLowerCase();
+
+    return '<' + tag + '>' + counter + "</" + tag + '>';
+  }
 }

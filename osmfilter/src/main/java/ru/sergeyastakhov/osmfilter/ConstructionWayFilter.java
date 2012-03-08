@@ -50,6 +50,8 @@ public class ConstructionWayFilter implements SinkSource, EntityProcessor
 
   private List<ElementError> errors;
 
+  private ErrorsSummary errorsSummary = new ErrorsSummary();
+
   public ConstructionWayFilter(int daysBeforeOpening, int daysAfterChecking, String _writeErrorXML)
   {
     dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -205,6 +207,8 @@ public class ConstructionWayFilter implements SinkSource, EntityProcessor
       errors = new ArrayList<ElementError>();
 
     errors.add(new ElementError(way, errorType, openingDate, checkDate));
+
+    errorsSummary.newError(errorType);
   }
 
   public void process(RelationContainer container)
@@ -248,12 +252,18 @@ public class ConstructionWayFilter implements SinkSource, EntityProcessor
 
           writer.println("<errors>");
 
+          errorsSummary.writeTo(writer);
+
           if( errors != null && !errors.isEmpty() )
           {
+            writer.println("<error_list>");
+
             for( ElementError error : errors )
             {
               error.writeTo(writer);
             }
+
+            writer.println("</error_list>");
           }
 
           writer.println("</errors>");
