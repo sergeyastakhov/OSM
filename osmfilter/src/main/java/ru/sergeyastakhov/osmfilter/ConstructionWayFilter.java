@@ -223,7 +223,7 @@ public class ConstructionWayFilter implements SinkSource, EntityProcessor
     {
       if( errors != null && !errors.isEmpty() )
       {
-        // Формирование bbox ошибочных объектов
+        // Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ bbox РѕС€РёР±РѕС‡РЅС‹С… РѕР±СЉРµРєС‚РѕРІ
         if( allNodes != null )
         {
           ReleasableIterator<Node> nodeIterator = allNodes.iterate();
