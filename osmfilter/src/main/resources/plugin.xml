@@ -2,11 +2,11 @@
 
 <!DOCTYPE plugin PUBLIC "-//JPF//Java Plug-in Manifest 1.0" "http://jpf.sourceforge.net/plugin_1_0.dtd">
 
-<plugin id="OSMFilter" version="1.3">
+<plugin id="OSMFilter" version="1.3.2">
 
   <requires>
     <import plugin-id="org.openstreetmap.osmosis.core.plugin.Core"
-            plugin-version="0.35" reverse-lookup="false"/>
+            plugin-version="0.40" reverse-lookup="false"/>
   </requires>
 
   <runtime>

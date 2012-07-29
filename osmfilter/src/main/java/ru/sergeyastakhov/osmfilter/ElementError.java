@@ -5,7 +5,8 @@
  */
 package ru.sergeyastakhov.osmfilter;
 
-import java.io.PrintWriter;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.openstreetmap.osmosis.core.domain.v0_6.Bound;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
@@ -49,26 +50,39 @@ public class ElementError
     }
   }
 
-  public void writeTo(PrintWriter writer)
+  public void writeTo(XMLStreamWriter writer) throws XMLStreamException
   {
-    writer.println("<error wayId=\"" + way.getId() + "\" errorType=\"" + errorType + "\">");
+    writer.writeStartElement("error");
+
+    writer.writeAttribute("wayId", String.valueOf(way.getId()));
+    writer.writeAttribute("errorType", String.valueOf(errorType));
 
     if( bound != null )
     {
-      writer.println("<bound right=\"" + bound.getRight() + "\" left=\"" + bound.getLeft()
-        + "\" top=\"" + bound.getTop() + "\" bottom=\"" + bound.getBottom() + "\"/>");
+      writer.writeStartElement("bound");
+
+      writer.writeAttribute("right", String.valueOf(bound.getRight()));
+      writer.writeAttribute("left", String.valueOf(bound.getLeft()));
+      writer.writeAttribute("top", String.valueOf(bound.getTop()));
+      writer.writeAttribute("bottom", String.valueOf(bound.getBottom()));
+
+      writer.writeEndElement();
     }
 
     if( openingDate != null )
     {
-      writer.println("<opening_date>" + openingDate + "</opening_date>");
+      writer.writeStartElement("opening_date");
+      writer.writeCharacters(openingDate);
+      writer.writeEndElement();
     }
 
     if( checkDate != null )
     {
-      writer.println("<check_date>" + checkDate + "</check_date>");
+      writer.writeStartElement("check_date");
+      writer.writeCharacters(checkDate);
+      writer.writeEndElement();
     }
 
-    writer.println("</error>");
+    writer.writeEndElement();
   }
 }

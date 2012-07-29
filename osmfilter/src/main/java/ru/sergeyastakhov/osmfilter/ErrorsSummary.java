@@ -5,9 +5,10 @@
  */
 package ru.sergeyastakhov.osmfilter;
 
-import java.util.Map;
 import java.util.HashMap;
-import java.io.PrintWriter;
+import java.util.Map;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 /**
  * @author Sergey Astakhov
@@ -32,11 +33,13 @@ public class ErrorsSummary
     total++;
   }
 
-  public void writeTo(PrintWriter writer)
+  public void writeTo(XMLStreamWriter writer) throws XMLStreamException
   {
-    writer.println("<summary>");
+    writer.writeStartElement("summary");
 
-    writer.println("<total>"+total+"</total>");
+    writer.writeStartElement("total");
+    writer.writeCharacters(String.valueOf(total));
+    writer.writeEndElement();
 
     for( ElementErrorType errorType : ElementErrorType.values() )
     {
@@ -44,9 +47,9 @@ public class ErrorsSummary
 
       if( counter==null ) counter = 0;
 
-      writer.println(errorType.toXMLTag(counter));
+      errorType.writeTo(writer, counter);
     }
 
-    writer.println("</summary>");
+    writer.writeEndElement();
   }
 }

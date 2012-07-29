@@ -5,14 +5,15 @@
  */
 package ru.sergeyastakhov.osmfilter;
 
-import java.io.PrintWriter;
 import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.openstreetmap.osmosis.core.container.v0_6.*;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
@@ -243,38 +244,49 @@ public class ConstructionWayFilter implements SinkSource, EntityProcessor
 
       try
       {
-        PrintWriter writer =
-          new PrintWriter(new OutputStreamWriter(new FileOutputStream(writeErrorXML), "UTF-8"));
+        XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+        OutputStream os = new FileOutputStream(writeErrorXML);
 
         try
         {
-          writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+          XMLStreamWriter writer = outputFactory.createXMLStreamWriter(os, "UTF-8");
 
-          writer.println("<errors>");
-
-          errorsSummary.writeTo(writer);
-
-          if( errors != null && !errors.isEmpty() )
+          try
           {
-            writer.println("<error_list>");
+            writer.writeStartDocument();
 
-            for( ElementError error : errors )
+            writer.writeStartElement("errors");
+
+            errorsSummary.writeTo(writer);
+
+            if( errors != null && !errors.isEmpty() )
             {
-              error.writeTo(writer);
+              writer.writeStartElement("error_list");
+
+              for( ElementError error : errors )
+              {
+                error.writeTo(writer);
+              }
+
+              writer.writeEndElement();
             }
 
-            writer.println("</error_list>");
-          }
+            writer.writeEndElement();
 
-          writer.println("</errors>");
-        }
-        catch( Exception e )
-        {
-          log.severe("Error writing error xml file: " + e);
+            writer.writeEndDocument();
+          }
+          catch( Exception e )
+          {
+            log.severe("Error writing error xml file: " + e);
+          }
+          finally
+          {
+            writer.close();
+          }
         }
         finally
         {
-          writer.close();
+          os.close();
         }
 
       }
