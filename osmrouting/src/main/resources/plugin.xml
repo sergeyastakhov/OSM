@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+
+<!DOCTYPE plugin PUBLIC "-//JPF//Java Plug-in Manifest 1.0" "http://jpf.sourceforge.net/plugin_1_0.dtd">
+
+<plugin id="OSMRouting" version="1.0">
+
+  <requires>
+    <import plugin-id="org.openstreetmap.osmosis.core.plugin.Core"
+            plugin-version="0.40" reverse-lookup="false"/>
+  </requires>
+
+  <runtime>
+    <library id="code" path="/" type="code"/>
+  </runtime>
+
+  <extension plugin-id="org.openstreetmap.osmosis.core.plugin.Core"
+             point-id="Task" id="OSMRouting/osmRouting-Task">
+    <parameter id="name" value="osmRouting"/>
+    <parameter id="class" value="ru.sergeyastakhov.osmrouting.OSMRoutingPlugin"/>
+  </extension>
+</plugin>
