@@ -75,6 +75,7 @@ public enum GraphLevel
     String highwayValue = null;
     boolean routeFerry = false;
     String ferryValue = null;
+    String constructionValue = null;
 
     Collection<Tag> wayTags = way.getTags();
     for( Tag tag : wayTags )
@@ -94,14 +95,21 @@ public enum GraphLevel
       {
         ferryValue = value;
       }
+      else if( key.equals("construction") )
+      {
+        constructionValue = value;
+      }
     }
 
     if( highwayValue != null )
     {
+      if( highwayValue.equals("construction") )
+        highwayValue = constructionValue;
+
       return fromHighwayValue(highwayValue);
     }
 
-    if( routeFerry && ferryValue!=null )
+    if( routeFerry && ferryValue != null )
     {
       return fromFerryValue(ferryValue);
     }

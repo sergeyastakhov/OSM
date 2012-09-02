@@ -10,10 +10,7 @@ import java.util.EnumMap;
 import java.util.logging.Logger;
 
 import org.openstreetmap.osmosis.core.container.v0_6.*;
-import org.openstreetmap.osmosis.core.domain.v0_6.Node;
-import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
-import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.core.domain.v0_6.*;
 import org.openstreetmap.osmosis.core.filter.common.IdTracker;
 import org.openstreetmap.osmosis.core.filter.common.IdTrackerFactory;
 import org.openstreetmap.osmosis.core.filter.common.IdTrackerType;
@@ -39,6 +36,7 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
 
   private SimpleObjectStore<NodeContainer> allNodes;
   private SimpleObjectStore<WayContainer> routingWays;
+  private SimpleObjectStore<RelationContainer> routingRelations;
 
   private IdTracker requiredNodes;
 
@@ -57,6 +55,8 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
       new SingleClassObjectSerializationFactory(NodeContainer.class), "brgt_nd", true);
     routingWays = new SimpleObjectStore<WayContainer>(
       new SingleClassObjectSerializationFactory(WayContainer.class), "brgt_wy", true);
+    routingRelations = new SimpleObjectStore<RelationContainer>(
+      new SingleClassObjectSerializationFactory(RelationContainer.class), "brgt_rl", true);
 
     requiredNodes = IdTrackerFactory.createInstance(idTrackerType);
   }
@@ -138,6 +138,8 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
 
     log.info("Send on all required ways");
 
+    IdTracker outputWays = IdTrackerFactory.createInstance(idTrackerType);
+
     ReleasableIterator<WayContainer> wayIterator = routingWays.iterate();
     while( wayIterator.hasNext() )
     {
@@ -190,9 +192,38 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
       }
 
       sink.process(wayContainer);
+
+      outputWays.set(way.getId());
     }
 
     wayIterator.release();
+
+    log.info("Send on all required relations");
+
+    ReleasableIterator<RelationContainer> relationIterator = routingRelations.iterate();
+    while( relationIterator.hasNext() )
+    {
+      RelationContainer relationContainer = relationIterator.next();
+      Relation relation = relationContainer.getEntity();
+
+      boolean usedRelation = false;
+
+      for( RelationMember member : relation.getMembers() )
+      {
+        if( member.getMemberType()==EntityType.Way && outputWays.get(member.getMemberId()) )
+        {
+          usedRelation = true;
+          break;
+        }
+      }
+
+      if( usedRelation )
+      {
+        sink.process(relationContainer);
+      }
+    }
+
+    relationIterator.release();
 
     log.info("Sending complete.");
 
@@ -218,9 +249,9 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void process(NodeContainer node)
+  public void process(NodeContainer nodeContainer)
   {
-    allNodes.add(node);
+    allNodes.add(nodeContainer);
   }
 
   @Override
@@ -265,7 +296,20 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void process(RelationContainer relation)
+  public void process(RelationContainer relationContainer)
   {
+    Relation relation = relationContainer.getEntity();
+
+    Collection<Tag> relationTags = relation.getTags();
+    for( Tag tag : relationTags )
+    {
+      String key = tag.getKey();
+      String value = tag.getValue();
+
+      if( key.equals("type") && value.equals("restriction") )
+      {
+        routingRelations.add(relationContainer);
+      }
+    }
   }
 }
