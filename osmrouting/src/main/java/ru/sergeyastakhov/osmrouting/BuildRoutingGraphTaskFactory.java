@@ -21,12 +21,12 @@ import org.openstreetmap.osmosis.core.pipeline.v0_6.SinkSourceManager;
 public class BuildRoutingGraphTaskFactory extends TaskManagerFactory
 {
   private static final String ARG_ID_TRACKER_TYPE = "idTrackerType";
-  private static final IdTrackerType DEFAULT_ID_TRACKER_TYPE = IdTrackerType.IdList;
+  private static final IdTrackerType DEFAULT_ID_TRACKER_TYPE = IdTrackerType.Dynamic;
 
   private static final String ARG_GRAPH_LEVEL = "graphLevel";
+  private static final String ARG_MINOR_GRAPHS_ACTION = "minorGraphsAction";
 
-  protected IdTrackerType getIdTrackerType(
-    TaskConfiguration taskConfig)
+  protected IdTrackerType getIdTrackerType(TaskConfiguration taskConfig)
   {
     if( doesArgumentExist(taskConfig, ARG_ID_TRACKER_TYPE) )
     {
@@ -70,15 +70,36 @@ public class BuildRoutingGraphTaskFactory extends TaskManagerFactory
     }
   }
 
+  private MinorGraphsAction getMinorGraphsAction(TaskConfiguration taskConfig)
+  {
+    if( !doesArgumentExist(taskConfig, ARG_MINOR_GRAPHS_ACTION) )
+      return MinorGraphsAction.MARK;
+
+    String minorGraphsActionName = getStringArgument(taskConfig, ARG_MINOR_GRAPHS_ACTION);
+
+    try
+    {
+      return MinorGraphsAction.valueOf(minorGraphsActionName.toUpperCase());
+    }
+    catch( IllegalArgumentException e )
+    {
+      throw new OsmosisRuntimeException(
+        "Argument " + ARG_MINOR_GRAPHS_ACTION + " for task " + taskConfig.getId()
+          + " must contain a valid action name."
+          + " Supported values are: " + Arrays.toString(MinorGraphsAction.values()), e);
+    }
+  }
+
   @Override
   protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig)
   {
     IdTrackerType idTrackerType = getIdTrackerType(taskConfig);
     GraphLevel graphLevel = getGraphLevel(taskConfig);
+    MinorGraphsAction minorGraphsAction = getMinorGraphsAction(taskConfig);
 
     return new SinkSourceManager(
       taskConfig.getId(),
-      new BuildRoutingGraphTask(idTrackerType, graphLevel),
+      new BuildRoutingGraphTask(idTrackerType, graphLevel, minorGraphsAction),
       taskConfig.getPipeArgs()
     );
   }
