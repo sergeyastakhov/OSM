@@ -136,6 +136,10 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
 
     nodeIterator.release();
 
+    allNodes.release();
+
+    requiredNodes = null;
+
     log.info("Send on all required ways");
 
     IdTracker outputWays = IdTrackerFactory.createInstance(idTrackerType);
@@ -165,28 +169,13 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
         }
         else if( minorGraphsAction == MinorGraphsAction.MARK )
         {
+          wayContainer = wayContainer.getWriteableInstance();
+
           GraphLevel wayLevel = GraphLevel.getWayLevel(way);
 
           for( GraphSet graphSet : graphs.values() )
           {
-            GraphLevel graphSetGraphLevel = graphSet.getGraphLevel();
-
-            if( graphSetGraphLevel.compareTo(wayLevel) < 0 )
-              continue;
-
-            RoutingGraph levelMaxGraph = graphSet.getMaxGraph();
-
-            boolean levelMaxGraphWay = levelMaxGraph.containsWay(way.getId());
-
-            if( !levelMaxGraphWay )
-            {
-              wayContainer = wayContainer.getWriteableInstance();
-
-              String minorTagKey = "minor_graph:" + graphSetGraphLevel.name().toLowerCase();
-
-              Collection<Tag> tags = wayContainer.getEntity().getTags();
-              tags.add(new Tag(minorTagKey, "yes"));
-            }
+            graphSet.markWayMinority(wayContainer.getEntity(), wayLevel);
           }
         }
       }
@@ -197,6 +186,8 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
     }
 
     wayIterator.release();
+
+    routingWays.release();
 
     log.info("Send on all required relations");
 
@@ -210,7 +201,7 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
 
       for( RelationMember member : relation.getMembers() )
       {
-        if( member.getMemberType()==EntityType.Way && outputWays.get(member.getMemberId()) )
+        if( member.getMemberType() == EntityType.Way && outputWays.get(member.getMemberId()) )
         {
           usedRelation = true;
           break;
@@ -224,6 +215,8 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
     }
 
     relationIterator.release();
+
+    routingRelations.release();
 
     log.info("Sending complete.");
 
@@ -309,6 +302,7 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
       if( key.equals("type") && value.equals("restriction") )
       {
         routingRelations.add(relationContainer);
+        break;
       }
     }
   }

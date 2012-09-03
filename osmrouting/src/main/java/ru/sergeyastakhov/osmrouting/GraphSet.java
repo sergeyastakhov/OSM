@@ -7,6 +7,7 @@ package ru.sergeyastakhov.osmrouting;
 
 import java.util.*;
 
+import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.core.filter.common.IdTrackerType;
@@ -136,5 +137,28 @@ public class GraphSet
       ", graphs count=" + graphs.size() +
       ", graphs=" + graphs +
       '}';
+  }
+
+  public boolean isLevelLessThan(GraphLevel testLevel)
+  {
+    return graphLevel.compareTo(testLevel) < 0;
+  }
+
+  public void markWayMinority(Way way, GraphLevel wayLevel)
+  {
+    if( isLevelLessThan(wayLevel) )
+      return;
+
+    RoutingGraph levelMaxGraph = getMaxGraph();
+
+    boolean levelMaxGraphWay = levelMaxGraph.containsWay(way.getId());
+
+    if( levelMaxGraphWay )
+      return;
+
+    String minorTagKey = "minor_graph:" + graphLevel.name().toLowerCase();
+
+    Collection<Tag> tags = way.getTags();
+    tags.add(new Tag(minorTagKey, "yes"));
   }
 }
