@@ -29,7 +29,7 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
 
   private Map<Long, Integer> nodeWayUsages = new HashMap<Long, Integer>();
 
-  private long newWayNextId = 1;
+  private IdFactory wayIdFactory = EntityIdFactory.wayIdFactory;
 
   public SplitRoutingGraphTask()
   {
@@ -77,8 +77,7 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
           }
           else
           {
-            id = -newWayNextId;
-            newWayNextId++;
+            id = wayIdFactory.nextId();
           }
 
           CommonEntityData entityData = new CommonEntityData
@@ -100,8 +99,7 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
       else if( wayNodeList.size() > 1 )
       {
         CommonEntityData entityData = new CommonEntityData
-          (-newWayNextId, 1, way.getTimestamp(), way.getUser(), 0, way.getTags());
-        newWayNextId++;
+          (wayIdFactory.nextId(), 1, way.getTimestamp(), way.getUser(), 0, way.getTags());
 
         Way newWay = new Way(entityData, wayNodeList);
 

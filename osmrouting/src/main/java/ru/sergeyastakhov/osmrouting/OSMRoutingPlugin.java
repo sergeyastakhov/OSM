@@ -26,6 +26,8 @@ public class OSMRoutingPlugin implements PluginLoader
 
     map.put("split-routing-graph", new SplitRoutingGraphTaskFactory());
 
+    map.put("directed-graph-lines", new DirectedGraphLinesTaskFactory());
+
     return map;
   }
 }
