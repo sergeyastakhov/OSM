@@ -11,6 +11,7 @@ import org.openstreetmap.osmosis.core.container.v0_6.*;
 import org.openstreetmap.osmosis.core.domain.v0_6.CommonEntityData;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.lifecycle.ReleasableIterator;
 import org.openstreetmap.osmosis.core.store.SimpleObjectStore;
 import org.openstreetmap.osmosis.core.store.SingleClassObjectSerializationFactory;
@@ -83,6 +84,8 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
           CommonEntityData entityData = new CommonEntityData
             (id, 1, way.getTimestamp(), way.getUser(), 0, way.getTags());
 
+          entityData.getTags().add(new Tag("original_id", String.valueOf(way.getId())));
+
           Way newWay = new Way(entityData, wayNodeList);
 
           sink.process(new WayContainer(newWay));
@@ -100,6 +103,8 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
       {
         CommonEntityData entityData = new CommonEntityData
           (wayIdFactory.nextId(), 1, way.getTimestamp(), way.getUser(), 0, way.getTags());
+
+        entityData.getTags().add(new Tag("original_id", String.valueOf(way.getId())));
 
         Way newWay = new Way(entityData, wayNodeList);
 

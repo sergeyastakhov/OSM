@@ -19,9 +19,11 @@ public class DirectedGraphLinesTaskFactory extends TaskManagerFactory
   @Override
   protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig)
   {
+    boolean vehicleOnly = getBooleanArgument(taskConfig, "vehicleOnly", true);
+
     return new SinkSourceManager(
       taskConfig.getId(),
-      new DirectedGraphLinesTask(),
+      new DirectedGraphLinesTask(vehicleOnly),
       taskConfig.getPipeArgs()
     );
   }

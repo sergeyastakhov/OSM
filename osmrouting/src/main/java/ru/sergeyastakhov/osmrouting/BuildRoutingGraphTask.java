@@ -79,17 +79,19 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
       return;
     }
 
+    GraphSet maxLevelGraphSet = null;
+
     for( GraphSet graphSet : graphs.values() )
     {
       graphSet.sortGraphs();
       log.info("GraphSet: " + graphSet);
+
+      maxLevelGraphSet = graphSet;
     }
 
-    GraphLevel maxLevel = GraphLevel.values()[graphs.size() - 1];
+    GraphLevel maxLevel = maxLevelGraphSet.getGraphLevel();
 
     log.info("Max level: " + maxLevel);
-
-    GraphSet maxLevelGraphSet = graphs.get(maxLevel);
 
     log.info("Total ways at max level: " + maxLevelGraphSet.getWayCount());
 

@@ -25,6 +25,13 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
 
   private IdFactory wayIdFactory = EntityIdFactory.wayIdFactory;
 
+  private AccessMode graphMinimumAccess;
+
+  public DirectedGraphLinesTask(boolean vehicleOnly)
+  {
+    graphMinimumAccess = vehicleOnly ? AccessMode.VEHICLE : AccessMode.ACCESS;
+  }
+
   @Override
   public void setSink(Sink _sink)
   {
@@ -68,10 +75,12 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
 
     Way directLine = wayContainer.getEntity();
 
-    Map<String, String> directLineTagsMap = new HashMap<String, String>();
-    Map<String, String> returnLineTagsMap = new HashMap<String, String>();
+    Map<AccessMode, String> wayAccessMap = new EnumMap<AccessMode, String>(AccessMode.class);
 
-    Map<String, String> passedTagsMap = new HashMap<String, String>();
+    Map<AccessMode, Boolean> directOnewayAccessMap = new EnumMap<AccessMode, Boolean>(AccessMode.class);
+    Map<AccessMode, Boolean> returnOnewayAccessMap = new EnumMap<AccessMode, Boolean>(AccessMode.class);
+
+    Map<String, String> nonAccessTagsMap = new HashMap<String, String>();
 
     // Generate access tags for lines from oneway tag
     for( Tag tag : directLine.getTags() )
@@ -79,59 +88,118 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
       String tagKey = tag.getKey();
       String tagValue = tag.getValue();
 
-      if( tagKey.endsWith(TAG_ONEWAY) )
+      if( tagKey.contains(TAG_ONEWAY) )
       {
-        String accessMode = TAG_VEHICLE;
+        AccessMode accessMode = AccessMode.VEHICLE;
 
         int keyLength = tagKey.length();
         if( keyLength > 7 )
         {
-         // xxx:oneway tag
-          accessMode = tagKey.substring(0, keyLength - 7);
+          if( tagKey.endsWith(TAG_ONEWAY) )
+          {
+            // xxx:oneway tag
+            accessMode = AccessMode.fromString(tagKey.substring(0, keyLength - 7));
+          }
+          else if( tagKey.startsWith(TAG_ONEWAY) )
+          {
+            // oneway:xxx tag
+            accessMode = AccessMode.fromString(tagKey.substring(7, keyLength));
+          }
+          else
+          {
+            accessMode = null;
+          }
         }
 
-        if( tagValue.equals("yes") )
+        if( accessMode != null )
         {
-          directLineTagsMap.put(accessMode, "yes");
-          returnLineTagsMap.put(accessMode, "no");
-        }
-        else if( tagValue.equals("-1") )
-        {
-          directLineTagsMap.put(accessMode, "no");
-          returnLineTagsMap.put(accessMode, "yes");
-        }
-        else if( tagValue.equals("no") )
-        {
-          directLineTagsMap.put(accessMode, "yes");
-          returnLineTagsMap.put(accessMode, "yes");
+          if( tagValue.equals("yes") )
+          {
+            directOnewayAccessMap.put(accessMode, true);
+            returnOnewayAccessMap.put(accessMode, false);
+          }
+          else if( tagValue.equals("-1") )
+          {
+            directOnewayAccessMap.put(accessMode, false);
+            returnOnewayAccessMap.put(accessMode, true);
+          }
+          else if( tagValue.equals("no") )
+          {
+            directOnewayAccessMap.put(accessMode, true);
+            returnOnewayAccessMap.put(accessMode, true);
+          }
+
+          continue;
         }
       }
       else
       {
-        passedTagsMap.put(tagKey, tagValue);
+        AccessMode accessMode = AccessMode.fromString(tagKey);
+        if( accessMode != null )
+        {
+          wayAccessMap.put(accessMode, tagValue);
+          continue;
+        }
       }
+
+      nonAccessTagsMap.put(tagKey, tagValue);
     }
 
-    // Put other tags over generated one
-    directLineTagsMap.putAll(passedTagsMap);
-    returnLineTagsMap.putAll(passedTagsMap);
+    // Build and send direct line
 
-    fillTagsFromMap(directLine.getTags(), directLineTagsMap);
+    Map<AccessMode, String> directAccessMap = AccessMode.restrictTags(wayAccessMap, directOnewayAccessMap);
 
-    // Send direct line
-    sink.process(new WayContainer(directLine));
+    if( graphMinimumAccess.hasAnySubModeAccess(directAccessMap) )
+    {
+      Map<String, String> directLineTagsMap = new HashMap<String, String>();
+
+      for( Map.Entry<AccessMode, String> entry : directAccessMap.entrySet() )
+      {
+        directLineTagsMap.put(entry.getKey().toString(), entry.getValue());
+      }
+
+      // Add nonaccess tags
+      directLineTagsMap.putAll(nonAccessTagsMap);
+
+      fillTagsFromMap(directLine.getTags(), directLineTagsMap);
+
+      // Send direct line
+      sink.process(new WayContainer(directLine));
+    }
 
     // Build and send return line
-    CommonEntityData entityData = new CommonEntityData
-      (wayIdFactory.nextId(), 1, directLine.getTimestamp(), directLine.getUser(), 0);
 
-    List<WayNode> wayNodeList = new ArrayList<WayNode>(directLine.getWayNodes());
-    Collections.reverse(wayNodeList);
-    Way returnLine = new Way(entityData, wayNodeList);
+    Map<AccessMode, String> returnAccessMap = AccessMode.restrictTags(wayAccessMap, returnOnewayAccessMap);
 
-    fillTagsFromMap(returnLine.getTags(), returnLineTagsMap);
+    if( graphMinimumAccess.hasAnySubModeAccess(returnAccessMap) )
+    {
+      Map<String, String> returnLineTagsMap = new HashMap<String, String>();
 
-    sink.process(new WayContainer(returnLine));
+      for( Map.Entry<AccessMode, String> entry : returnAccessMap.entrySet() )
+      {
+        returnLineTagsMap.put(entry.getKey().toString(), entry.getValue());
+      }
+
+      // Add nonaccess tags
+      returnLineTagsMap.putAll(nonAccessTagsMap);
+
+      if( !returnLineTagsMap.containsKey("original_id") )
+      {
+        returnLineTagsMap.put("original_id", String.valueOf(directLine.getId()));
+      }
+
+      CommonEntityData entityData = new CommonEntityData
+         (wayIdFactory.nextId(), 1, directLine.getTimestamp(), directLine.getUser(), 0);
+
+      List<WayNode> wayNodeList = new ArrayList<WayNode>(directLine.getWayNodes());
+      Collections.reverse(wayNodeList);
+
+      Way returnLine = new Way(entityData, wayNodeList);
+
+      fillTagsFromMap(returnLine.getTags(), returnLineTagsMap);
+
+      sink.process(new WayContainer(returnLine));
+    }
   }
 
   private static void fillTagsFromMap(Collection<Tag> tags, Map<String, String> tagsMap)
