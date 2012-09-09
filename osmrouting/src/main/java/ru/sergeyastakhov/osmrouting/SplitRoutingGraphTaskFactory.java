@@ -1,7 +1,7 @@
 /**
  * $Id$
  *
- * Copyright (C) 2012 CSBI. All Rights Reserved
+ * Copyright (C) 2012 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osmrouting;
 
