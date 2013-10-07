@@ -8,12 +8,9 @@ package ru.sergeyastakhov.osm2dcm;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,27 +67,16 @@ public class Main
       // Пул потоков
       int poolSize = Integer.parseInt(config.getProperty("processing.poolSize", "4"));
 
-      final ExecutorService executorService = Executors.newFixedThreadPool(poolSize);
+      ExecutorService convertExecutor = Executors.newFixedThreadPool(poolSize);
 
-      // Формирование списка задач на конвертацию
-      List<Callable<Object>> taskList = mapConverter.getTaskList(new ConversionListener()
-      {
-        @Override
-        public void conversionCompleted(MapConversionTask task)
-        {
-          ThreadPoolExecutor tpe = (ThreadPoolExecutor) executorService;
+      mapConverter.setConvertExecutor(convertExecutor);
 
-          log.log(Level.FINE, "Queue state: {0} from {1} completed",
-                  new Object[]{tpe.getCompletedTaskCount() + 1, tpe.getTaskCount()});
-        }
-      });
+      ExecutorService updateExecutor = Executors.newFixedThreadPool(1);
 
-      // Запуск заданий с ожиданием их завершения
-      log.info("Start executing conversion tasks...");
-      executorService.invokeAll(taskList);
+      mapConverter.setUpdateExecutor(updateExecutor);
 
-      log.info("Done");
-      System.exit(0);
+      // Запуск конвертации
+      mapConverter.doConversion();
     }
     catch( Exception e )
     {

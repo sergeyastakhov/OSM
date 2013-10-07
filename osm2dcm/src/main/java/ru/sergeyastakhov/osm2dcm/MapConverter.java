@@ -10,7 +10,8 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +33,10 @@ public class MapConverter
   private File processLogDir;
 
   private MapListWriter mapListWriter;
+
+  private ExecutorService convertExecutor;
+
+  private ExecutorService updateExecutor;
 
   public void setHistoryFile(File _historyFile)
   {
@@ -63,53 +68,48 @@ public class MapConverter
     mapListWriter = _mapListWriter;
   }
 
-  public List<Callable<Object>> getTaskList(final ConversionListener conversionListener)
+  public void setConvertExecutor(ExecutorService _convertExecutor)
   {
+    convertExecutor = _convertExecutor;
+  }
+
+  public void setUpdateExecutor(ExecutorService _updateExecutor)
+  {
+    updateExecutor = _updateExecutor;
+  }
+
+  public void doConversion() throws InterruptedException
+  {
+    // Запуск заданий на выполнение
+    log.info("Start executing conversion tasks...");
+
     // Сортировка списка
     List<MapConversionTask> sortedTaskList = new ArrayList<MapConversionTask>(mapTaskList);
 
     Collections.sort(sortedTaskList, MapConversionTask.PRIORITY_SORT);
 
     // Формирование списка задач на выполнение
-    List<Callable<Object>> taskList = new ArrayList<Callable<Object>>();
 
-    for( final MapConversionTask task : sortedTaskList )
+    for( MapConversionTask task : sortedTaskList )
     {
-      taskList.add(new Callable<Object>()
-      {
-        @Override
-        public Object call() throws Exception
-        {
-          boolean conversionSuccess = task.convertMap(processLogDir, sourceDir);
-
-          try
-          {
-            // Сохранение списка в отдельном каталоге
-            String fileName = MessageFormat.format("history.txt-{0,time,yyyyMMddHHmm}", task.getLastTryDate());
-
-            File historyLogFile = new File(historyLogDir, fileName);
-
-            saveTaskList(historyLogFile);
-
-            saveTaskList(historyFile);
-          }
-          catch( Exception e )
-          {
-            log.log(Level.WARNING, "Error saving history", e);
-          }
-
-          if( conversionSuccess )
-          {
-            mapListWriter.saveMapList(mapTaskList);
-          }
-
-          conversionListener.conversionCompleted(task);
-          return null;
-        }
-      });
+      convertExecutor.execute(new ConversionTask(task));
     }
+  }
 
-    return taskList;
+  private void checkForEmptyQueues()
+  {
+    ThreadPoolExecutor ctpe = (ThreadPoolExecutor) convertExecutor;
+    ThreadPoolExecutor utpe = (ThreadPoolExecutor) updateExecutor;
+
+    log.log(Level.FINE,
+            "Queue state: convertExecutor - {0} from {1} completed, updateExecutor - {2} from {3} completed",
+            new Object[]{ctpe.getCompletedTaskCount(), ctpe.getTaskCount(), utpe.getCompletedTaskCount(), utpe.getTaskCount()});
+
+    if( ctpe.getCompletedTaskCount() + utpe.getCompletedTaskCount() + 1 == ctpe.getTaskCount() + utpe.getTaskCount() )
+    {
+      log.info("Queue task is empty, exiting");
+      System.exit(0);
+    }
   }
 
   public synchronized void loadTaskList() throws IOException
@@ -153,4 +153,113 @@ public class MapConverter
       pw.close();
     }
   }
+
+  private class ConversionTask implements Runnable
+  {
+    private MapConversionTask task;
+
+    public ConversionTask(MapConversionTask _task)
+    {
+      task = _task;
+    }
+
+    @Override
+    public void run()
+    {
+      if( task.isSourceUpdateNeeded(sourceDir) )
+      {
+        updateExecutor.execute(new UpdateSourceTask(task));
+        return;
+      }
+
+      try
+      {
+        boolean conversionSuccess = task.convertMap(processLogDir, sourceDir);
+
+        try
+        {
+          // Сохранение списка в отдельном каталоге
+          String fileName = MessageFormat.format("history.txt-{0,time,yyyyMMddHHmm}", task.getLastTryDate());
+
+          File historyLogFile = new File(historyLogDir, fileName);
+
+          saveTaskList(historyLogFile);
+
+          saveTaskList(historyFile);
+        }
+        catch( Exception e )
+        {
+          log.log(Level.WARNING, "Error saving history", e);
+        }
+
+        if( conversionSuccess )
+        {
+          mapListWriter.saveMapList(mapTaskList);
+        }
+
+        checkForEmptyQueues();
+      }
+      catch( Exception e )
+      {
+        log.log(Level.WARNING, "Error executing conversion task", e);
+      }
+    }
+  }
+
+  public class UpdateSourceTask implements Runnable
+  {
+    private MapConversionTask task;
+
+    public UpdateSourceTask(MapConversionTask _task)
+    {
+      task = _task;
+    }
+
+    @Override
+    public void run()
+    {
+      if( !task.isSourceUpdateNeeded(sourceDir) )
+      {
+        convertExecutor.execute(new ConversionTask(task));
+        return;
+      }
+
+      File logFile = new File(processLogDir, "update.log");
+
+      String sourceFileName = task.getSourceFileName();
+      String code = task.getCode();
+
+      log.log(Level.INFO, "Trying to update source file {0} for map {1}", new Object[]{sourceFileName, code});
+
+      try
+      {
+        ProcessBuilder pb = new ProcessBuilder("update.bat", sourceFileName);
+
+        pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+        Process process = pb.start();
+
+        int result = process.waitFor();
+
+        if( result == 0 && !task.isSourceUpdateNeeded(sourceDir) )
+        {
+          convertExecutor.execute(new ConversionTask(task));
+        }
+        else
+        {
+          log.log(Level.WARNING, "Update source file {0} for map {1} failed. Result={2}",
+                  new Object[]{sourceFileName, code, result});
+
+          checkForEmptyQueues();
+        }
+      }
+      catch( Exception e )
+      {
+        log.log(Level.SEVERE, "Update source file failed", e);
+      }
+    }
+  }
+
+
 }

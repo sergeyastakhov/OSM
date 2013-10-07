@@ -174,6 +174,11 @@ public class MapConversionTask
     writer.writeEndElement();
   }
 
+  public String getCode()
+  {
+    return code;
+  }
+
   public Date getLastTryDate()
   {
     return lastTryDate;
@@ -186,41 +191,28 @@ public class MapConversionTask
 
   public boolean convertMap(File logDir, File sourceDir) throws Exception
   {
-    String sourceFileName = source.length() != 0 ? source : code + ".osm";
+    String sourceFileName = getSourceFileName();
     File sourceFile = new File(sourceDir, sourceFileName);
+
     File logFile = new File(logDir, code + ".log");
 
-    Date sourceFileTime = sourceFile.exists() ? new Date(sourceFile.lastModified()) : null;
-
-    log.log(Level.INFO, "Process map {0} {1} {2,date,short} {3,date,short} {4,date,short}",
-            new Object[]{code, source, sourceFileTime, date, lastTryDate});
-
-    Date currentTime = new Date();
-
-    if( priority < 9 &&
-        lastTryDate != null &&
-        TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - lastTryDate.getTime()) > 300 &&
-        (sourceFileTime == null || TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - sourceFileTime.getTime()) > 7) )
-    {
-      // Обновление исходного файла
-      if( runUpdate(sourceFileName, logFile) )
-      {
-        sourceFileTime = sourceFile.exists() ? new Date(sourceFile.lastModified()) : null;
-      }
-    }
+    log.log(Level.INFO, "Process map {0} {1} {2,date,short} {3,date,short}",
+            new Object[]{code, source, date, lastTryDate});
 
     if( priority != 0 )
     {
-      if( sourceFileTime == null )
+      if( !sourceFile.exists() )
       {
         log.log(Level.WARNING, "Can''t convert map {0} - no source file {1}", new Object[]{code, sourceFile});
         return false;
       }
 
+      Date sourceFileTime = new Date(sourceFile.lastModified());
+
       if( !sourceFileTime.after(lastTryDate) )
       {
-        log.log(Level.INFO, "Skipping map {0} - source file {1} is not updated since last try",
-                new Object[]{code, sourceFile});
+        log.log(Level.INFO, "Skipping map {0} - source file {1} is not updated since last try ({2,date, short})",
+                new Object[]{code, sourceFile, lastTryDate});
         return false;
       }
     }
@@ -228,22 +220,6 @@ public class MapConversionTask
     // Запуск конвертации
 
     return runConversion(sourceFileName, logFile);
-  }
-
-  private boolean runUpdate(String sourceFileName, File logFile) throws Exception
-  {
-    log.log(Level.INFO, "Trying to update source file {0}", new Object[]{sourceFileName});
-
-    ProcessBuilder pb = new ProcessBuilder("update.bat", sourceFileName);
-
-    pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
-    pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-
-    Process process = pb.start();
-
-    int result = process.waitFor();
-
-    return result == 0;
   }
 
   private boolean runConversion(String sourceFileName, File logFile) throws Exception
@@ -289,5 +265,26 @@ public class MapConversionTask
     }
 
     return conversionSuccess;
+  }
+
+  public String getSourceFileName()
+  {
+    return source.length() != 0 ? source : code + ".osm";
+  }
+
+  public boolean isSourceUpdateNeeded(File sourceDir)
+  {
+    String sourceFileName = getSourceFileName();
+    File sourceFile = new File(sourceDir, sourceFileName);
+
+    Date sourceFileTime = sourceFile.exists() ? new Date(sourceFile.lastModified()) : null;
+
+    Date currentTime = new Date();
+
+    return sourceFileTime == null ||
+        (priority < 9 &&
+            lastTryDate != null &&
+            TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - lastTryDate.getTime()) > 30 &&
+            TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - sourceFileTime.getTime()) > 7);
   }
 }
