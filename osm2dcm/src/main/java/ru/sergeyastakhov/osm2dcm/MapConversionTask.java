@@ -108,26 +108,12 @@ public class MapConversionTask
   {
     DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
-    StringBuilder sb = new StringBuilder();
-
-    sb.append(code).append('|');
-    sb.append(cgId).append('|');
-    sb.append(priority).append('|');
-    sb.append(locTitle).append('|');
-    sb.append(title).append('|');
-    sb.append(poly).append('|');
-    sb.append(source).append('|');
-    sb.append(qaMode).append('|');
-    sb.append(customKeys).append('|');
-    sb.append(viewPoint).append('|');
-
-    sb.append(lastTryDate != null ? dateFormat.format(lastTryDate) : "").append('|');
-    sb.append(date != null ? dateFormat.format(date) : "").append('|');
-
-    sb.append(version).append('|');
-    sb.append(usedTime);
-
-    return sb.toString();
+    return String.format
+        ("%-11s | %-11s | %-2s | %-32s | %-32s | %-10s | %-20s | %-3s | %-45s | %-20s | %-20s | %-20s | %-3s | %-3s",
+         code,cgId,priority,locTitle,title,poly,source,qaMode,customKeys,viewPoint,
+         lastTryDate != null ? dateFormat.format(lastTryDate) : "",
+         date != null ? dateFormat.format(date) : "",
+         version, usedTime);
   }
 
   public synchronized void writeTo(XMLStreamWriter writer, String downloadUrlTemplate) throws XMLStreamException
