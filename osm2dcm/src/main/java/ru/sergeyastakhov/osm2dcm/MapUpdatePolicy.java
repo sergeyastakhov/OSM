@@ -1,5 +1,5 @@
 /**
- * ConversionListener.java
+ * MapUpdatePolicy.java
  *
  * Copyright (C) 2013 Sergey Astakhov. All Rights Reserved
  */
@@ -9,7 +9,7 @@ package ru.sergeyastakhov.osm2dcm;
  * @author Sergey Astakhov
  * @version $Revision$
  */
-public interface ConversionListener
+public interface MapUpdatePolicy
 {
-  void conversionCompleted(MapConversionTask task);
+  boolean isSourceUpdateNeeded(MapConversionTask task);
 }

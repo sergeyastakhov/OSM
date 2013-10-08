@@ -272,19 +272,8 @@ public class MapConversionTask
     return source.length() != 0 ? source : code + ".osm";
   }
 
-  public boolean isSourceUpdateNeeded(File sourceDir)
+  public int getPriority()
   {
-    String sourceFileName = getSourceFileName();
-    File sourceFile = new File(sourceDir, sourceFileName);
-
-    Date sourceFileTime = sourceFile.exists() ? new Date(sourceFile.lastModified()) : null;
-
-    Date currentTime = new Date();
-
-    return sourceFileTime == null ||
-        (priority < 9 &&
-            lastTryDate != null &&
-            TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - lastTryDate.getTime()) > 30 &&
-            TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - sourceFileTime.getTime()) > 7);
+    return priority;
   }
 }

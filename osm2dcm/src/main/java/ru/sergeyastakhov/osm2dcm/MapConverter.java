@@ -34,6 +34,8 @@ public class MapConverter
 
   private MapListWriter mapListWriter;
 
+  private MapUpdatePolicy mapUpdatePolicy;
+
   private ExecutorService convertExecutor;
 
   private ExecutorService updateExecutor;
@@ -66,6 +68,11 @@ public class MapConverter
   public void setMapListWriter(MapListWriter _mapListWriter)
   {
     mapListWriter = _mapListWriter;
+  }
+
+  public void setMapUpdatePolicy(MapUpdatePolicy _mapUpdatePolicy)
+  {
+    mapUpdatePolicy = _mapUpdatePolicy;
   }
 
   public void setConvertExecutor(ExecutorService _convertExecutor)
@@ -166,7 +173,7 @@ public class MapConverter
     @Override
     public void run()
     {
-      if( task.isSourceUpdateNeeded(sourceDir) )
+      if( mapUpdatePolicy.isSourceUpdateNeeded(task) )
       {
         updateExecutor.execute(new UpdateSourceTask(task));
         return;
@@ -218,7 +225,7 @@ public class MapConverter
     @Override
     public void run()
     {
-      if( !task.isSourceUpdateNeeded(sourceDir) )
+      if( !mapUpdatePolicy.isSourceUpdateNeeded(task) )
       {
         convertExecutor.execute(new ConversionTask(task));
         return;
@@ -242,7 +249,7 @@ public class MapConverter
 
         int result = process.waitFor();
 
-        if( result == 0 && !task.isSourceUpdateNeeded(sourceDir) )
+        if( result == 0 && !mapUpdatePolicy.isSourceUpdateNeeded(task) )
         {
           convertExecutor.execute(new ConversionTask(task));
         }

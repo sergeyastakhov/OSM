@@ -60,6 +60,14 @@ public class Main
 
       mapConverter.setMapListWriter(mapListWriter);
 
+      PeriodMapUpdatePolicy mapUpdatePolicy = new PeriodMapUpdatePolicy();
+
+      mapUpdatePolicy.setSourceDir(sourceDir);
+      mapUpdatePolicy.setSourceExpiredDays(Integer.parseInt(config.getProperty("mapUpdatePolicy.sourceExpiredDays","30")));
+      mapUpdatePolicy.setSourceIsNewDays(Integer.parseInt(config.getProperty("mapUpdatePolicy.sourceIsNewDays","7")));
+
+      mapConverter.setMapUpdatePolicy(mapUpdatePolicy);
+
       // Загрузка списка карт
       log.info("Loading task list...");
       mapConverter.loadTaskList();
