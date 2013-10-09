@@ -9,8 +9,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,7 +74,8 @@ public class Main
       // Пул потоков
       int poolSize = Integer.parseInt(config.getProperty("processing.poolSize", "4"));
 
-      ExecutorService convertExecutor = Executors.newFixedThreadPool(poolSize);
+      ExecutorService convertExecutor = new ThreadPoolExecutor
+          (poolSize, poolSize, 0L, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>());
 
       mapConverter.setConvertExecutor(convertExecutor);
 

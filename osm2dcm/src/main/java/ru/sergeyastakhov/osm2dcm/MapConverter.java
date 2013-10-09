@@ -161,7 +161,7 @@ public class MapConverter
     }
   }
 
-  private class ConversionTask implements Runnable
+  private class ConversionTask implements Runnable, Comparable<ConversionTask>
   {
     private MapConversionTask task;
 
@@ -210,6 +210,12 @@ public class MapConverter
       {
         log.log(Level.WARNING, "Error executing conversion task", e);
       }
+    }
+
+    @Override
+    public int compareTo(ConversionTask o)
+    {
+      return MapConversionTask.PRIORITY_SORT.compare(task, o.task);
     }
   }
 

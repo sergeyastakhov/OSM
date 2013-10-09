@@ -46,6 +46,11 @@ public class MapConversionTask
         result = Integer.valueOf(m1.usedTime).compareTo(m2.usedTime);
       }
 
+      if( result == 0 )
+      {
+        result = m1.code.compareTo(m2.code);
+      }
+
       return result;
     }
   };
@@ -214,12 +219,14 @@ public class MapConversionTask
 
     String dcmTitle = title.length() != 0 ? title : locTitle;
     String polyFile = poly.length() != 0 ? poly : code;
+    String dcmViewPoint = viewPoint.length()!=0 ? viewPoint:"\"\"";
+    String conversionCustomKeys = customKeys.length()!=0 ? customKeys:"\"\"";
 
     int newVersion = version + 1;
 
     ProcessBuilder pb = new ProcessBuilder
         ("make.bat",
-         code, dcmTitle, polyFile, sourceFileName, qaMode, customKeys, viewPoint,
+         code, dcmTitle, polyFile, sourceFileName, qaMode, conversionCustomKeys, dcmViewPoint,
          Integer.toString(newVersion),
          cgId);
 
