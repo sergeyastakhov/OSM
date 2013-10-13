@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -24,6 +25,7 @@ public class MapListWriter
   private String downloadUrlTemplate;
   private File mapListXMLFile;
   private String mapListXMLEncoding;
+  private String runAfterUpdate;
 
   public void setDownloadUrlTemplate(String _downloadUrlTemplate)
   {
@@ -40,7 +42,12 @@ public class MapListWriter
     mapListXMLEncoding = _mapListXMLEncoding;
   }
 
-  public void saveMapList(List<MapConversionTask> mapTaskList)
+  public void setRunAfterUpdate(String _runAfterUpdate)
+  {
+    runAfterUpdate = _runAfterUpdate;
+  }
+
+  public synchronized void saveMapList(List<MapConversionTask> mapTaskList)
   {
     {
       try
@@ -71,7 +78,7 @@ public class MapListWriter
           }
           catch( Exception e )
           {
-            log.severe("Error writing error xml file: " + e);
+            log.severe("Error writing xml file: " + e);
           }
           finally
           {
@@ -83,12 +90,42 @@ public class MapListWriter
           os.close();
         }
 
+        afterUpdate();
       }
       catch( Exception e )
       {
-        log.severe("Error creating error xml file: " + e);
+        log.severe("Error creating xml file: " + e);
       }
+    }
+  }
 
+  private void afterUpdate()
+  {
+    if( runAfterUpdate == null || runAfterUpdate.length() == 0 )
+    {
+      return;
+    }
+
+    log.log(Level.INFO, "Executing {0}", runAfterUpdate);
+
+    try
+    {
+      ProcessBuilder pb = new ProcessBuilder(runAfterUpdate);
+
+      pb.inheritIO();
+
+      Process process = pb.start();
+
+      int result = process.waitFor();
+
+      if( result != 0 )
+      {
+        log.log(Level.WARNING, "Execution of {0} failed. Result={1}", new Object[]{runAfterUpdate, result});
+      }
+    }
+    catch( Exception e )
+    {
+      log.log(Level.SEVERE, "Execution of " + runAfterUpdate + " failed", e);
     }
   }
 }

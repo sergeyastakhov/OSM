@@ -56,6 +56,7 @@ public class Main
       mapListWriter.setDownloadUrlTemplate(config.getProperty("mapListXML.downloadUrlTemplate"));
       mapListWriter.setMapListXMLFile(new File(config.getProperty("mapListXML.file")));
       mapListWriter.setMapListXMLEncoding(config.getProperty("mapListXML.encoding","Windows-1251"));
+      mapListWriter.setRunAfterUpdate(config.getProperty("mapListXML.runAfterUpdate","uploadmaplist.bat"));
 
       mapConverter.setMapListWriter(mapListWriter);
 
