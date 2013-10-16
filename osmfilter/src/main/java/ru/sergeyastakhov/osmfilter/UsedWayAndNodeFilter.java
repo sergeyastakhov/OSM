@@ -5,9 +5,6 @@
  */
 package ru.sergeyastakhov.osmfilter;
 
-import java.util.logging.Logger;
-import java.util.Collection;
-
 import org.openstreetmap.osmosis.core.container.v0_6.*;
 import org.openstreetmap.osmosis.core.domain.v0_6.*;
 import org.openstreetmap.osmosis.core.filter.common.IdTracker;
@@ -18,6 +15,10 @@ import org.openstreetmap.osmosis.core.store.SimpleObjectStore;
 import org.openstreetmap.osmosis.core.store.SingleClassObjectSerializationFactory;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.core.task.v0_6.SinkSource;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author Sergey Astakhov
@@ -43,17 +44,21 @@ public class UsedWayAndNodeFilter implements SinkSource, EntityProcessor
   public UsedWayAndNodeFilter(IdTrackerType idTrackerType, boolean _usedByTag)
   {
     allNodes = new SimpleObjectStore<NodeContainer>(
-          new SingleClassObjectSerializationFactory(NodeContainer.class), "afnd", true);
+        new SingleClassObjectSerializationFactory(NodeContainer.class), "afnd", true);
     allWays = new SimpleObjectStore<WayContainer>(
-      new SingleClassObjectSerializationFactory(WayContainer.class), "afwy", true);
+        new SingleClassObjectSerializationFactory(WayContainer.class), "afwy", true);
     allRelations = new SimpleObjectStore<RelationContainer>(
-      new SingleClassObjectSerializationFactory(RelationContainer.class), "afrl", true);
+        new SingleClassObjectSerializationFactory(RelationContainer.class), "afrl", true);
 
     requiredNodes = IdTrackerFactory.createInstance(idTrackerType);
     requiredWays = IdTrackerFactory.createInstance(idTrackerType);
     usedByTag = _usedByTag;
   }
 
+  @Override
+  public void initialize(Map<String, Object> metaData)
+  {
+  }
 
   public void process(EntityContainer entityContainer)
   {
@@ -93,7 +98,7 @@ public class UsedWayAndNodeFilter implements SinkSource, EntityProcessor
       else if( memberType.equals(EntityType.Node) )
       {
         requiredNodes.set(member.getMemberId());
-      }        
+      }
     }
 
     allRelations.add(container);
@@ -108,7 +113,7 @@ public class UsedWayAndNodeFilter implements SinkSource, EntityProcessor
     log.info("Send on all required ways");
     sendWays();
 
-    log.info("Send on all relations"); 
+    log.info("Send on all relations");
     sendRelations();
 
     // done
@@ -120,7 +125,7 @@ public class UsedWayAndNodeFilter implements SinkSource, EntityProcessor
     if( tags.isEmpty() )
       return true;
 
-    return tags.size()==1 && tags.iterator().next().getKey().equals("created_by");
+    return tags.size() == 1 && tags.iterator().next().getKey().equals("created_by");
   }
 
   private boolean isRequiredNode(Node node)
@@ -222,5 +227,5 @@ public class UsedWayAndNodeFilter implements SinkSource, EntityProcessor
   public void setSink(Sink sink)
   {
     this.sink = sink;
-	}
+  }
 }

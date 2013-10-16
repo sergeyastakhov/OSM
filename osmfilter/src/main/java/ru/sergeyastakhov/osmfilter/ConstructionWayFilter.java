@@ -5,16 +5,6 @@
  */
 package ru.sergeyastakhov.osmfilter;
 
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.logging.Logger;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.openstreetmap.osmosis.core.container.v0_6.*;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
@@ -24,6 +14,16 @@ import org.openstreetmap.osmosis.core.store.SimpleObjectStore;
 import org.openstreetmap.osmosis.core.store.SingleClassObjectSerializationFactory;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.core.task.v0_6.SinkSource;
+
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * @author Sergey Astakhov
@@ -85,9 +85,14 @@ public class ConstructionWayFilter implements SinkSource, EntityProcessor
 
     if( writeErrorXML != null )
     {
-      allNodes = new SimpleObjectStore<Node>(
-        new SingleClassObjectSerializationFactory(Node.class), "cwfnd", true);
+      allNodes = new SimpleObjectStore<Node>
+          (new SingleClassObjectSerializationFactory(Node.class), "cwfnd", true);
     }
+  }
+
+  @Override
+  public void initialize(Map<String, Object> metaData)
+  {
   }
 
   public void process(EntityContainer entityContainer)
