@@ -47,10 +47,10 @@ public class PeriodMapUpdatePolicy implements MapUpdatePolicy
 
     Date currentTime = new Date();
 
-    return sourceFileTime == null ||
-        (priority < 9 &&
-            lastTryDate != null &&
-            TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - lastTryDate.getTime()) > sourceExpiredDays &&
+    return priority < 9 &&
+        lastTryDate != null &&
+        TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - lastTryDate.getTime()) > sourceExpiredDays &&
+        (sourceFileTime == null ||
             TimeUnit.MILLISECONDS.toDays(currentTime.getTime() - sourceFileTime.getTime()) > sourceIsNewDays);
   }
 }
