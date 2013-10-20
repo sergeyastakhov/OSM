@@ -49,55 +49,53 @@ public class MapListWriter
 
   public synchronized void saveMapList(List<MapConversionTask> mapTaskList)
   {
+    try
     {
+      XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+
+      OutputStream os = new FileOutputStream(mapListXMLFile);
+
       try
       {
-        XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+        XMLStreamWriter writer = outputFactory.createXMLStreamWriter(os, mapListXMLEncoding);
 
-        OutputStream os = new FileOutputStream(mapListXMLFile);
+        writer = XMLPrettyPrintProxy.createProxy(writer);
 
         try
         {
-          XMLStreamWriter writer = outputFactory.createXMLStreamWriter(os, mapListXMLEncoding);
+          writer.writeStartDocument(mapListXMLEncoding, "1.0");
 
-          writer = XMLPrettyPrintProxy.createProxy(writer);
+          writer.writeStartElement("maplist");
 
-          try
+          for( MapConversionTask task : mapTaskList )
           {
-            writer.writeStartDocument(mapListXMLEncoding, "1.0");
-
-            writer.writeStartElement("maplist");
-
-            for( MapConversionTask task : mapTaskList )
-            {
-              if( task.isHaveMapDate() )
-                task.writeTo(writer, downloadUrlTemplate);
-            }
-
-            writer.writeEndElement();
-
-            writer.writeEndDocument();
+            if( task.isHaveMapDate() )
+              task.writeTo(writer, downloadUrlTemplate);
           }
-          catch( Exception e )
-          {
-            log.severe("Error writing xml file: " + e);
-          }
-          finally
-          {
-            writer.close();
-          }
+
+          writer.writeEndElement();
+
+          writer.writeEndDocument();
+        }
+        catch( Exception e )
+        {
+          log.severe("Error writing xml file: " + e);
         }
         finally
         {
-          os.close();
+          writer.close();
         }
-
-        afterUpdate();
       }
-      catch( Exception e )
+      finally
       {
-        log.severe("Error creating xml file: " + e);
+        os.close();
       }
+
+      afterUpdate();
+    }
+    catch( Exception e )
+    {
+      log.severe("Error creating xml file: " + e);
     }
   }
 

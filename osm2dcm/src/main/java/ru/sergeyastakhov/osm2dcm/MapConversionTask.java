@@ -55,6 +55,15 @@ public class MapConversionTask
     }
   };
 
+  public static final Comparator<? super MapConversionTask> NAME_SORT = new Comparator<MapConversionTask>()
+  {
+    @Override
+    public int compare(MapConversionTask m1, MapConversionTask m2)
+    {
+      return m1.locTitle.compareTo(m2.locTitle);
+    }
+  };
+
   private String code;
   private String cgId;
   private int priority;
@@ -233,15 +242,17 @@ public class MapConversionTask
     pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
-    lastTryDate = new Date();
+    long startMark = System.currentTimeMillis();
 
     Process process = pb.start();
 
     int result = process.waitFor();
 
-    long elapsedTime = System.currentTimeMillis() - lastTryDate.getTime();
+    long elapsedTime = System.currentTimeMillis() - startMark;
 
     log.log(Level.INFO, "Conversion for map {0} completed. Result code = {1}", new Object[]{code, result});
+
+    lastTryDate = new Date();
 
     boolean conversionSuccess = result == 0;
 

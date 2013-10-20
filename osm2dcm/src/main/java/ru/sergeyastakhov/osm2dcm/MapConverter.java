@@ -24,6 +24,7 @@ public class MapConverter
   private static final Logger log = Logger.getLogger("ru.sergeyastakhov.osm2dcm.MapConverter");
 
   private List<MapConversionTask> mapTaskList = new ArrayList<MapConversionTask>();
+  private List<MapConversionTask> sortedTaskList;
 
   private File historyFile;
   private File historyLogDir;
@@ -142,6 +143,10 @@ public class MapConverter
     {
       br.close();
     }
+
+    sortedTaskList = new ArrayList<MapConversionTask>(mapTaskList);
+
+    Collections.sort(sortedTaskList, MapConversionTask.NAME_SORT);
   }
 
   private synchronized void saveTaskList(File file) throws IOException
@@ -201,7 +206,7 @@ public class MapConverter
 
         if( conversionSuccess )
         {
-          mapListWriter.saveMapList(mapTaskList);
+          mapListWriter.saveMapList(sortedTaskList);
         }
 
         checkForEmptyQueues();
