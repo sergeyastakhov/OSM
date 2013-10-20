@@ -60,6 +60,8 @@ public class MapListWriter
         {
           XMLStreamWriter writer = outputFactory.createXMLStreamWriter(os, mapListXMLEncoding);
 
+          writer = XMLPrettyPrintProxy.createProxy(writer);
+
           try
           {
             writer.writeStartDocument(mapListXMLEncoding, "1.0");
