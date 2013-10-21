@@ -228,16 +228,20 @@ public class MapConversionTask
 
     String dcmTitle = title.length() != 0 ? title : locTitle;
     String polyFile = poly.length() != 0 ? poly : code;
-    String dcmViewPoint = viewPoint.length()!=0 ? viewPoint:"\"\"";
-    String conversionCustomKeys = customKeys.length()!=0 ? customKeys:"\"\"";
 
     int newVersion = version + 1;
 
     ProcessBuilder pb = new ProcessBuilder
         ("make.bat",
-         code, dcmTitle, polyFile, sourceFileName, qaMode, conversionCustomKeys, dcmViewPoint,
+         StringTools.quoteString(code),
+         StringTools.quoteString(dcmTitle),
+         StringTools.quoteString(polyFile),
+         StringTools.quoteString(sourceFileName),
+         StringTools.quoteString(qaMode),
+         StringTools.quoteString(customKeys),
+         StringTools.quoteString(viewPoint),
          Integer.toString(newVersion),
-         cgId);
+         StringTools.quoteString(cgId));
 
     pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);
