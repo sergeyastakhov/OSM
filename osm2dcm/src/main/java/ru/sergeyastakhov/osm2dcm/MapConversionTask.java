@@ -233,15 +233,15 @@ public class MapConversionTask
 
     ProcessBuilder pb = new ProcessBuilder
         ("make.bat",
-         StringTools.quoteString(code),
+         code,
          StringTools.quoteString(dcmTitle),
-         StringTools.quoteString(polyFile),
-         StringTools.quoteString(sourceFileName),
-         StringTools.quoteString(qaMode),
+         polyFile,
+         sourceFileName,
+         qaMode,
          StringTools.quoteString(customKeys),
          StringTools.quoteString(viewPoint),
          Integer.toString(newVersion),
-         StringTools.quoteString(cgId));
+         cgId);
 
     pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);

@@ -251,7 +251,7 @@ public class MapConverter
 
       try
       {
-        ProcessBuilder pb = new ProcessBuilder("update.bat", StringTools.quoteString(sourceFileName));
+        ProcessBuilder pb = new ProcessBuilder("update.bat", sourceFileName);
 
         pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
