@@ -100,7 +100,7 @@ public class MapConverter
 
     for( MapConversionTask task : sortedTaskList )
     {
-      convertExecutor.execute(new ConversionTask(task));
+      convertExecutor.execute(new ConversionTask(task, true));
     }
   }
 
@@ -169,16 +169,18 @@ public class MapConverter
   private class ConversionTask implements Runnable, Comparable<ConversionTask>
   {
     private MapConversionTask task;
+    private boolean checkForUpdate = true;
 
-    public ConversionTask(MapConversionTask _task)
+    private ConversionTask(MapConversionTask _task, boolean _checkForUpdate)
     {
       task = _task;
+      checkForUpdate = _checkForUpdate;
     }
 
     @Override
     public void run()
     {
-      if( mapUpdatePolicy.isSourceUpdateNeeded(task) )
+      if( checkForUpdate && mapUpdatePolicy.isSourceUpdateNeeded(task) )
       {
         updateExecutor.execute(new UpdateSourceTask(task));
         return;
@@ -238,7 +240,7 @@ public class MapConverter
     {
       if( !mapUpdatePolicy.isSourceUpdateNeeded(task) )
       {
-        convertExecutor.execute(new ConversionTask(task));
+        convertExecutor.execute(new ConversionTask(task, true));
         return;
       }
 
@@ -260,9 +262,11 @@ public class MapConverter
 
         int result = process.waitFor();
 
-        if( result == 0 && !mapUpdatePolicy.isSourceUpdateNeeded(task) )
+        boolean sourceUpdated = !mapUpdatePolicy.isSourceUpdateNeeded(task);
+
+        if( result == 0 && (sourceUpdated || task.getPriority()==0) )
         {
-          convertExecutor.execute(new ConversionTask(task));
+          convertExecutor.execute(new ConversionTask(task, sourceUpdated));
         }
         else
         {
