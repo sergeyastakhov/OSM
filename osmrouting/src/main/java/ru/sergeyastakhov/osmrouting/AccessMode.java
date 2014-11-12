@@ -25,7 +25,8 @@ public enum AccessMode
   PSV(MOTOR_VEHICLE),
   BUS(PSV),
   TAXI(PSV),
-  HGV(MOTOR_VEHICLE);
+  HGV(MOTOR_VEHICLE),
+  EMERGENCY(ACCESS);
 
   private AccessMode parent;
 
