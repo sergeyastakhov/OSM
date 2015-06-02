@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +41,9 @@ public class MapConverter
   private ExecutorService convertExecutor;
 
   private ExecutorService updateExecutor;
+
+  private WatchdogService watchdogService;
+  private int convertTimeout = 480;
 
   public void setHistoryFile(File _historyFile)
   {
@@ -86,6 +90,16 @@ public class MapConverter
     updateExecutor = _updateExecutor;
   }
 
+  public void setWatchdogService(WatchdogService _watchdogService)
+  {
+    watchdogService = _watchdogService;
+  }
+
+  public void setConvertTimeout(int _convertTimeout)
+  {
+    convertTimeout = _convertTimeout;
+  }
+
   public void doConversion() throws InterruptedException
   {
     // Запуск заданий на выполнение
@@ -116,6 +130,11 @@ public class MapConverter
     if( ctpe.getCompletedTaskCount() + utpe.getCompletedTaskCount() + 1 == ctpe.getTaskCount() + utpe.getTaskCount() )
     {
       log.info("Queue task is empty, exiting");
+
+      convertExecutor.shutdown();
+      updateExecutor.shutdown();
+      watchdogService.stopService();
+
       System.exit(0);
     }
   }
@@ -188,7 +207,18 @@ public class MapConverter
 
       try
       {
-        boolean conversionSuccess = task.convertMap(processLogDir, sourceDir);
+        boolean conversionSuccess;
+
+        watchdogService.taskStarted(convertTimeout, TimeUnit.MINUTES);
+
+        try
+        {
+          conversionSuccess = task.convertMap(processLogDir, sourceDir);
+        }
+        finally
+        {
+          watchdogService.taskStopped();
+        }
 
         try
         {
@@ -264,7 +294,7 @@ public class MapConverter
 
         boolean sourceUpdated = !mapUpdatePolicy.isSourceUpdateNeeded(task);
 
-        if( result == 0 && (sourceUpdated || task.getPriority()==0) )
+        if( result == 0 && (sourceUpdated || task.getPriority() == 0) )
         {
           convertExecutor.execute(new ConversionTask(task, sourceUpdated));
         }
@@ -282,6 +312,4 @@ public class MapConverter
       }
     }
   }
-
-
 }

@@ -84,6 +84,14 @@ public class Main
 
       mapConverter.setUpdateExecutor(updateExecutor);
 
+      // Watchdog
+      mapConverter.setWatchdogService(new InterruptWatchdogService());
+
+      // Timeout для конвертации (в минутах)
+      int convertTimeout = Integer.parseInt(config.getProperty("processing.convertTimeout", "480"));
+
+      mapConverter.setConvertTimeout(convertTimeout);
+
       // Запуск конвертации
       mapConverter.doConversion();
     }

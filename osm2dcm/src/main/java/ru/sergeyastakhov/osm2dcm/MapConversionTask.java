@@ -124,7 +124,7 @@ public class MapConversionTask
 
     return String.format
         ("%-11s | %-11s | %-2s | %-32s | %-32s | %-10s | %-20s | %-3s | %-45s | %-20s | %-20s | %-20s | %-3s | %-3s",
-         code,cgId,priority,locTitle,title,poly,source,qaMode,customKeys,viewPoint,
+         code, cgId, priority, locTitle, title, poly, source, qaMode, customKeys, viewPoint,
          lastTryDate != null ? dateFormat.format(lastTryDate) : "",
          date != null ? dateFormat.format(date) : "",
          version, usedTime);
@@ -250,7 +250,20 @@ public class MapConversionTask
 
     Process process = pb.start();
 
-    int result = process.waitFor();
+    int result;
+
+    try
+    {
+      result = process.waitFor();
+    }
+    catch( InterruptedException e )
+    {
+      log.log(Level.WARNING, "Conversion for map {0} stopped due timeout.", code);
+
+      process.destroy();
+
+      return false;
+    }
 
     long elapsedTime = System.currentTimeMillis() - startMark;
 
