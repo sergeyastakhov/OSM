@@ -82,6 +82,14 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
 
     Map<String, String> nonAccessTagsMap = new HashMap<String, String>();
 
+    HighwayType highwayType = HighwayType.getWayType(directLine);
+
+    // motorway односторонние по умолчанию
+    if( highwayType != null && highwayType.isOneway() )
+    {
+      returnOnewayAccessMap.put(AccessMode.VEHICLE, false);
+    }
+
     // Generate access tags for lines from oneway tag
     for( Tag tag : directLine.getTags() )
     {
@@ -115,18 +123,18 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
         {
           if( tagValue.equals("yes") )
           {
-            directOnewayAccessMap.put(accessMode, true);
+//            directOnewayAccessMap.put(accessMode, true);
             returnOnewayAccessMap.put(accessMode, false);
           }
           else if( tagValue.equals("-1") )
           {
             directOnewayAccessMap.put(accessMode, false);
-            returnOnewayAccessMap.put(accessMode, true);
+            returnOnewayAccessMap.remove(accessMode);
           }
           else if( tagValue.equals("no") )
           {
-            directOnewayAccessMap.put(accessMode, true);
-            returnOnewayAccessMap.put(accessMode, true);
+            directOnewayAccessMap.remove(accessMode);
+            returnOnewayAccessMap.remove(accessMode);
           }
 
           continue;
