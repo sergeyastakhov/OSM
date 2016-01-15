@@ -30,6 +30,7 @@ public enum HighwayType
   TERTIARY_LINK(GraphLevel.TERTIARY),
   UNCLASSIFIED(GraphLevel.RESIDENTIAL),
   RESIDENTIAL(GraphLevel.RESIDENTIAL),
+  LIVING_STREET(GraphLevel.SERVICE),
   SERVICE(GraphLevel.SERVICE),
   TRACK(GraphLevel.TRACK),
   PEDESTRIAN(GraphLevel.FOOTWAY),
