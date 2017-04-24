@@ -1,6 +1,6 @@
 /**
  * MapConversionTask.java
- *
+ * <p>
  * Copyright (C) 2013 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osm2dcm;
@@ -124,13 +124,14 @@ public class MapConversionTask
 
     return String.format
         ("%-11s | %-11s | %-2s | %-32s | %-32s | %-10s | %-20s | %-3s | %-45s | %-20s | %-20s | %-20s | %-3s | %-3s",
-         code, cgId, priority, locTitle, title, poly, source, qaMode, customKeys, viewPoint,
-         lastTryDate != null ? dateFormat.format(lastTryDate) : "",
-         date != null ? dateFormat.format(date) : "",
-         version, usedTime);
+            code, cgId, priority, locTitle, title, poly, source, qaMode, customKeys, viewPoint,
+            lastTryDate != null ? dateFormat.format(lastTryDate) : "",
+            date != null ? dateFormat.format(date) : "",
+            version, usedTime);
   }
 
-  public synchronized void writeTo(XMLStreamWriter writer, String downloadUrlTemplate) throws XMLStreamException
+  public synchronized void writeTo(XMLStreamWriter writer, String downloadUrlTemplate, String versionTemplate)
+      throws XMLStreamException
   {
     writer.writeStartElement("map");
 
@@ -157,7 +158,7 @@ public class MapConversionTask
     writer.writeEndElement();
 
     writer.writeStartElement("version");
-    writer.writeCharacters("1." + version);
+    writer.writeCharacters(MessageFormat.format(versionTemplate, version));
     writer.writeEndElement();
 
     writer.writeStartElement("url");
@@ -197,7 +198,7 @@ public class MapConversionTask
     File logFile = new File(logDir, code + ".log");
 
     log.log(Level.INFO, "Process map {0} {1} {2,date,short} {3,date,short}",
-            new Object[]{code, source, date, lastTryDate});
+        new Object[]{code, source, date, lastTryDate});
 
     if( priority != 0 )
     {
@@ -212,7 +213,7 @@ public class MapConversionTask
       if( !sourceFileTime.after(lastTryDate) )
       {
         log.log(Level.INFO, "Skipping map {0} - source file {1} is not updated since last try ({2,date, short})",
-                new Object[]{code, sourceFile, lastTryDate});
+            new Object[]{code, sourceFile, lastTryDate});
         return false;
       }
     }
@@ -233,15 +234,15 @@ public class MapConversionTask
 
     ProcessBuilder pb = new ProcessBuilder
         ("make.bat",
-         code,
-         StringTools.quoteString(dcmTitle),
-         polyFile,
-         sourceFileName,
-         qaMode,
-         StringTools.quoteString(customKeys),
-         StringTools.quoteString(viewPoint),
-         Integer.toString(newVersion),
-         cgId);
+            code,
+            StringTools.quoteString(dcmTitle),
+            polyFile,
+            sourceFileName,
+            qaMode,
+            StringTools.quoteString(customKeys),
+            StringTools.quoteString(viewPoint),
+            Integer.toString(newVersion),
+            cgId);
 
     pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);

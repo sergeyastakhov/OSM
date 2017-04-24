@@ -54,6 +54,7 @@ public class Main
 
       MapListWriter mapListWriter = new MapListWriter();
       mapListWriter.setDownloadUrlTemplate(config.getProperty("mapListXML.downloadUrlTemplate"));
+      mapListWriter.setVersionTemplate(config.getProperty("mapListXML.versionTemplate"));
       mapListWriter.setMapListXMLFile(new File(config.getProperty("mapListXML.file")));
       mapListWriter.setMapListXMLEncoding(config.getProperty("mapListXML.encoding","Windows-1251"));
       mapListWriter.setRunAfterUpdate(config.getProperty("mapListXML.runAfterUpdate","uploadmaplist.bat"));

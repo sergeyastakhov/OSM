@@ -23,6 +23,8 @@ public class MapListWriter
   private static final Logger log = Logger.getLogger("ru.sergeyastakhov.osm2dcm.MapListWriter");
 
   private String downloadUrlTemplate;
+  private String versionTemplate;
+
   private File mapListXMLFile;
   private String mapListXMLEncoding;
   private String runAfterUpdate;
@@ -30,6 +32,11 @@ public class MapListWriter
   public void setDownloadUrlTemplate(String _downloadUrlTemplate)
   {
     downloadUrlTemplate = _downloadUrlTemplate;
+  }
+
+  public void setVersionTemplate(String _versionTemplate)
+  {
+    versionTemplate = _versionTemplate;
   }
 
   public void setMapListXMLFile(File _mapListXMLFile)
@@ -70,7 +77,7 @@ public class MapListWriter
           for( MapConversionTask task : mapTaskList )
           {
             if( task.isHaveMapDate() )
-              task.writeTo(writer, downloadUrlTemplate);
+              task.writeTo(writer, downloadUrlTemplate, versionTemplate);
           }
 
           writer.writeEndElement();
