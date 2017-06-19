@@ -1,16 +1,15 @@
 /**
  * $Id$
  *
- * Copyright (C) 2012 Sergey Astakhov. All Rights Reserved
+ * Copyright (C) 2012-2017 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osmrouting;
-
-import java.util.*;
 
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.core.filter.common.IdTrackerType;
+
+import java.util.*;
 
 /**
  * @author Sergey Astakhov
@@ -18,15 +17,13 @@ import org.openstreetmap.osmosis.core.filter.common.IdTrackerType;
  */
 public class GraphSet
 {
-  private IdTrackerType idTrackerType;
   private GraphLevel graphLevel;
-  private List<RoutingGraph> graphs = new ArrayList<RoutingGraph>();
+  private List<RoutingGraph> graphs = new ArrayList<>();
 
-  private Map<Long, RoutingGraph> graphsByNodes = new HashMap<Long, RoutingGraph>();
+  private Map<Long, RoutingGraph> graphsByNodes = new HashMap<>();
 
-  public GraphSet(IdTrackerType _idTrackerType, GraphLevel _graphLevel)
+  public GraphSet(GraphLevel _graphLevel)
   {
-    idTrackerType = _idTrackerType;
     graphLevel = _graphLevel;
   }
 
@@ -37,7 +34,7 @@ public class GraphSet
 
   private List<RoutingGraph> getRoutingGraphsByNodes(List<WayNode> nodes)
   {
-    Set<RoutingGraph> result = new HashSet<RoutingGraph>();
+    Set<RoutingGraph> result = new HashSet<>();
 
     for( WayNode wayNode : nodes )
     {
@@ -50,7 +47,7 @@ public class GraphSet
       }
     }
 
-    List<RoutingGraph> resultList = new ArrayList<RoutingGraph>(result);
+    List<RoutingGraph> resultList = new ArrayList<>(result);
 
     if( resultList.size() > 1 )
     {
@@ -70,7 +67,7 @@ public class GraphSet
     {
       // Not connected to other graphs
 
-      resultGraph = new RoutingGraph(idTrackerType);
+      resultGraph = new RoutingGraph();
       graphs.add(resultGraph);
     }
     else if( wayGraphs.size() == 1 )

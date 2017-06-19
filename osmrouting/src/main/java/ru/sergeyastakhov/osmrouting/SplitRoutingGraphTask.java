@@ -1,22 +1,22 @@
 /**
  * $Id$
  *
- * Copyright (C) 2012 Sergey Astakhov. All Rights Reserved
+ * Copyright (C) 2012-2017 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osmrouting;
 
-import java.util.*;
-
 import org.openstreetmap.osmosis.core.container.v0_6.*;
 import org.openstreetmap.osmosis.core.domain.v0_6.CommonEntityData;
+import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.lifecycle.ReleasableIterator;
 import org.openstreetmap.osmosis.core.store.SimpleObjectStore;
 import org.openstreetmap.osmosis.core.store.SingleClassObjectSerializationFactory;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.core.task.v0_6.SinkSource;
+
+import java.util.*;
 
 /**
  * @author Sergey Astakhov
@@ -28,15 +28,18 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
 
   private SimpleObjectStore<WayContainer> allWays;
 
-  private Map<Long, Integer> nodeWayUsages = new HashMap<Long, Integer>();
+  private Map<Long, Integer> nodeWayUsages = new HashMap<>();
 
   private IdFactory wayIdFactory = EntityIdFactory.wayIdFactory;
 
   public SplitRoutingGraphTask()
   {
-    allWays = new SimpleObjectStore<WayContainer>(
-      new SingleClassObjectSerializationFactory(WayContainer.class), "srgt_wy", true);
+    allWays = new SimpleObjectStore<>(
+        new SingleClassObjectSerializationFactory(WayContainer.class), "srgt_wy", true);
   }
+
+  @Override
+  public void initialize(Map<String, Object> metaData) {}
 
   @Override
   public void process(EntityContainer entityContainer)
@@ -54,7 +57,7 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
 
       Way way = wayContainer.getEntity();
 
-      List<WayNode> wayNodeList = new ArrayList<WayNode>();
+      List<WayNode> wayNodeList = new ArrayList<>();
       boolean firstSplit = true;
 
       for( WayNode wayNode : way.getWayNodes() )
@@ -144,7 +147,7 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
   {
     Way way = wayContainer.getEntity();
 
-    Set<Long> nodeIds = new HashSet<Long>();
+    Set<Long> nodeIds = new HashSet<>();
 
     for( WayNode wayNode : way.getWayNodes() )
     {

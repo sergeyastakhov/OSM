@@ -5,11 +5,11 @@
  */
 package ru.sergeyastakhov.osmrouting;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.openstreetmap.osmosis.core.pipeline.common.TaskManagerFactory;
 import org.openstreetmap.osmosis.core.plugin.PluginLoader;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Sergey Astakhov
@@ -20,7 +20,7 @@ public class OSMRoutingPlugin implements PluginLoader
   @Override
   public Map<String, TaskManagerFactory> loadTaskFactories()
   {
-    Map<String, TaskManagerFactory> map = new HashMap<String, TaskManagerFactory>();
+    Map<String, TaskManagerFactory> map = new HashMap<>();
 
     map.put("build-routing-graph", new BuildRoutingGraphTaskFactory());
 

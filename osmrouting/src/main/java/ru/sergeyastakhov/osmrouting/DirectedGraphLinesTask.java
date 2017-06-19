@@ -1,16 +1,19 @@
 /**
  * $Id$
- *
- * Copyright (C) 2012 Sergey Astakhov. All Rights Reserved
+ * <p>
+ * Copyright (C) 2012-2017 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osmrouting;
 
-import java.util.*;
-
 import org.openstreetmap.osmosis.core.container.v0_6.*;
-import org.openstreetmap.osmosis.core.domain.v0_6.*;
+import org.openstreetmap.osmosis.core.domain.v0_6.CommonEntityData;
+import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
+import org.openstreetmap.osmosis.core.domain.v0_6.Way;
+import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.core.task.v0_6.SinkSource;
+
+import java.util.*;
 
 /**
  * @author Sergey Astakhov
@@ -31,6 +34,9 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
   {
     graphMinimumAccess = vehicleOnly ? AccessMode.VEHICLE : AccessMode.ACCESS;
   }
+
+  @Override
+  public void initialize(Map<String, Object> metaData) {}
 
   @Override
   public void setSink(Sink _sink)
@@ -75,12 +81,13 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
 
     Way directLine = wayContainer.getEntity();
 
-    Map<AccessMode, String> wayAccessMap = new EnumMap<AccessMode, String>(AccessMode.class);
+    Map<AccessMode, String> wayAccessMap = new EnumMap<>(AccessMode.class);
 
-    Map<AccessMode, Boolean> directOnewayAccessMap = new EnumMap<AccessMode, Boolean>(AccessMode.class);
-    Map<AccessMode, Boolean> returnOnewayAccessMap = new EnumMap<AccessMode, Boolean>(AccessMode.class);
+    Map<AccessMode, Boolean> directOnewayAccessMap = new EnumMap<>(AccessMode.class);
+    Map<AccessMode, Boolean> returnOnewayAccessMap = new EnumMap<>(AccessMode.class);
 
-    Map<String, String> nonAccessTagsMap = new HashMap<String, String>();
+    Map<String, String> directNonAccessTagsMap = new HashMap<>();
+    Map<String, String> returnNonAccessTagsMap = new HashMap<>();
 
     HighwayType highwayType = HighwayType.getWayType(directLine);
 
@@ -121,20 +128,20 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
 
         if( accessMode != null )
         {
-          if( tagValue.equals("yes") )
+          switch( tagValue )
           {
+            case "yes":
 //            directOnewayAccessMap.put(accessMode, true);
-            returnOnewayAccessMap.put(accessMode, false);
-          }
-          else if( tagValue.equals("-1") )
-          {
-            directOnewayAccessMap.put(accessMode, false);
-            returnOnewayAccessMap.remove(accessMode);
-          }
-          else if( tagValue.equals("no") )
-          {
-            directOnewayAccessMap.remove(accessMode);
-            returnOnewayAccessMap.remove(accessMode);
+              returnOnewayAccessMap.put(accessMode, false);
+              break;
+            case "-1":
+              directOnewayAccessMap.put(accessMode, false);
+              returnOnewayAccessMap.remove(accessMode);
+              break;
+            case "no":
+              directOnewayAccessMap.remove(accessMode);
+              returnOnewayAccessMap.remove(accessMode);
+              break;
           }
 
           continue;
@@ -150,7 +157,29 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
         }
       }
 
-      nonAccessTagsMap.put(tagKey, tagValue);
+      directNonAccessTagsMap.put(tagKey, tagValue);
+      returnNonAccessTagsMap.put(tagKey, tagValue);
+    }
+
+    // Атрибуты с суффиксами :forward/:backward перекрывают
+    // эквивалентные теги без суффиксов в соответствующем направлении.
+
+    for( String tagKey : new HashSet<>(directNonAccessTagsMap.keySet()) )
+    {
+      if( tagKey.endsWith(":forward") )
+      {
+        returnNonAccessTagsMap.remove(tagKey);
+
+        String tagValue = directNonAccessTagsMap.get(tagKey);
+        directNonAccessTagsMap.put(tagKey.substring(0, tagKey.lastIndexOf(':')), tagValue);
+      }
+      else if( tagKey.endsWith(":backward") )
+      {
+        directNonAccessTagsMap.remove(tagKey);
+
+        String tagValue = returnNonAccessTagsMap.get(tagKey);
+        returnNonAccessTagsMap.put(tagKey.substring(0, tagKey.lastIndexOf(':')), tagValue);
+      }
     }
 
     // Build and send direct line
@@ -159,7 +188,7 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
 
     if( graphMinimumAccess.hasAnySubModeAccess(directAccessMap) )
     {
-      Map<String, String> directLineTagsMap = new HashMap<String, String>();
+      Map<String, String> directLineTagsMap = new HashMap<>();
 
       for( Map.Entry<AccessMode, String> entry : directAccessMap.entrySet() )
       {
@@ -167,7 +196,7 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
       }
 
       // Add nonaccess tags
-      directLineTagsMap.putAll(nonAccessTagsMap);
+      directLineTagsMap.putAll(directNonAccessTagsMap);
 
       fillTagsFromMap(directLine.getTags(), directLineTagsMap);
 
@@ -181,7 +210,7 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
 
     if( graphMinimumAccess.hasAnySubModeAccess(returnAccessMap) )
     {
-      Map<String, String> returnLineTagsMap = new HashMap<String, String>();
+      Map<String, String> returnLineTagsMap = new HashMap<>();
 
       for( Map.Entry<AccessMode, String> entry : returnAccessMap.entrySet() )
       {
@@ -189,7 +218,7 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
       }
 
       // Add nonaccess tags
-      returnLineTagsMap.putAll(nonAccessTagsMap);
+      returnLineTagsMap.putAll(returnNonAccessTagsMap);
 
       if( !returnLineTagsMap.containsKey("original_id") )
       {
@@ -197,9 +226,9 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
       }
 
       CommonEntityData entityData = new CommonEntityData
-         (wayIdFactory.nextId(), 1, directLine.getTimestamp(), directLine.getUser(), 0);
+          (wayIdFactory.nextId(), 1, directLine.getTimestamp(), directLine.getUser(), 0);
 
-      List<WayNode> wayNodeList = new ArrayList<WayNode>(directLine.getWayNodes());
+      List<WayNode> wayNodeList = new ArrayList<>(directLine.getWayNodes());
       Collections.reverse(wayNodeList);
 
       Way returnLine = new Way(entityData, wayNodeList);

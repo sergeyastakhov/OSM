@@ -5,12 +5,12 @@
  */
 package ru.sergeyastakhov.osmrouting;
 
+import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
+import org.openstreetmap.osmosis.core.domain.v0_6.Way;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
-import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 
 /**
  * @author Sergey Astakhov
@@ -38,7 +38,7 @@ public enum HighwayType
   STEPS(GraphLevel.FOOTWAY),
   PATH(GraphLevel.FOOTWAY);
 
-  static final Map<String, HighwayType> typeMap = new HashMap<String, HighwayType>();
+  static final Map<String, HighwayType> typeMap = new HashMap<>();
 
   static
   {
@@ -95,21 +95,20 @@ public enum HighwayType
       String key = tag.getKey();
       String value = tag.getValue();
 
-      if( key.equals("highway") )
+      switch( key )
       {
-        highwayValue = value;
-      }
-      else if( key.equals("route") )
-      {
-        routeFerry = value.equals("ferry");
-      }
-      else if( key.equals("ferry") )
-      {
-        ferryValue = value;
-      }
-      else if( key.equals("construction") )
-      {
-        constructionValue = value;
+        case "highway":
+          highwayValue = value;
+          break;
+        case "route":
+          routeFerry = value.equals("ferry");
+          break;
+        case "ferry":
+          ferryValue = value;
+          break;
+        case "construction":
+          constructionValue = value;
+          break;
       }
     }
 

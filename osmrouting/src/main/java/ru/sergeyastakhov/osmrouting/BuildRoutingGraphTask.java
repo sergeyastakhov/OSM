@@ -1,13 +1,9 @@
 /**
  * $Id$
  *
- * Copyright (C) 2012 Sergey Astakhov. All Rights Reserved
+ * Copyright (C) 2012-2017 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osmrouting;
-
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.logging.Logger;
 
 import org.openstreetmap.osmosis.core.container.v0_6.*;
 import org.openstreetmap.osmosis.core.domain.v0_6.*;
@@ -20,6 +16,11 @@ import org.openstreetmap.osmosis.core.store.SingleClassObjectSerializationFactor
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.core.task.v0_6.SinkSource;
 
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.logging.Logger;
+
 /**
  * @author Sergey Astakhov
  * @version $Revision$
@@ -30,7 +31,6 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
 
   private Sink sink;
 
-  private IdTrackerType idTrackerType;
   private GraphLevel graphLevel;
   private MinorGraphsAction minorGraphsAction;
 
@@ -40,26 +40,27 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
 
   private IdTracker requiredNodes;
 
-  private EnumMap<GraphLevel, GraphSet> graphs = new EnumMap<GraphLevel, GraphSet>(GraphLevel.class);
+  private EnumMap<GraphLevel, GraphSet> graphs = new EnumMap<>(GraphLevel.class);
 
   public BuildRoutingGraphTask
-    (IdTrackerType _idTrackerType, GraphLevel _graphLevel, MinorGraphsAction _minorGraphsAction)
+    (GraphLevel _graphLevel, MinorGraphsAction _minorGraphsAction)
   {
-    idTrackerType = _idTrackerType;
-
     graphLevel = _graphLevel;
 
     minorGraphsAction = _minorGraphsAction;
 
-    allNodes = new SimpleObjectStore<NodeContainer>(
-      new SingleClassObjectSerializationFactory(NodeContainer.class), "brgt_nd", true);
-    routingWays = new SimpleObjectStore<WayContainer>(
-      new SingleClassObjectSerializationFactory(WayContainer.class), "brgt_wy", true);
-    routingRelations = new SimpleObjectStore<RelationContainer>(
-      new SingleClassObjectSerializationFactory(RelationContainer.class), "brgt_rl", true);
+    allNodes = new SimpleObjectStore<>(
+        new SingleClassObjectSerializationFactory(NodeContainer.class), "brgt_nd", true);
+    routingWays = new SimpleObjectStore<>(
+        new SingleClassObjectSerializationFactory(WayContainer.class), "brgt_wy", true);
+    routingRelations = new SimpleObjectStore<>(
+        new SingleClassObjectSerializationFactory(RelationContainer.class), "brgt_rl", true);
 
-    requiredNodes = IdTrackerFactory.createInstance(idTrackerType);
+    requiredNodes = IdTrackerFactory.createInstance(IdTrackerType.Dynamic);
   }
+
+  @Override
+  public void initialize(Map<String, Object> metaData) {}
 
   @Override
   public void process(EntityContainer entityContainer)
@@ -144,7 +145,7 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
 
     log.info("Send on all required ways");
 
-    IdTracker outputWays = IdTrackerFactory.createInstance(idTrackerType);
+    IdTracker outputWays = IdTrackerFactory.createInstance(IdTrackerType.Dynamic);
 
     ReleasableIterator<WayContainer> wayIterator = routingWays.iterate();
     while( wayIterator.hasNext() )
@@ -280,7 +281,7 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
 
       if( graphSet == null )
       {
-        graphSet = new GraphSet(idTrackerType, level);
+        graphSet = new GraphSet(level);
         graphs.put(level, graphSet);
       }
 

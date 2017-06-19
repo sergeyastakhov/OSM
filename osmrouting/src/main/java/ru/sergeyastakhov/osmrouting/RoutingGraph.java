@@ -1,17 +1,17 @@
 /**
  * $Id$
  *
- * Copyright (C) 2012 Sergey Astakhov. All Rights Reserved
+ * Copyright (C) 2012-2017 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osmrouting;
-
-import java.util.Comparator;
 
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.core.filter.common.IdTracker;
 import org.openstreetmap.osmosis.core.filter.common.IdTrackerFactory;
 import org.openstreetmap.osmosis.core.filter.common.IdTrackerType;
+
+import java.util.Comparator;
 
 /**
  * @author Sergey Astakhov
@@ -33,10 +33,10 @@ public class RoutingGraph
 
   private int wayCount;
 
-  public RoutingGraph(IdTrackerType idTrackerType)
+  public RoutingGraph()
   {
-    nodes = IdTrackerFactory.createInstance(idTrackerType);
-    ways = IdTrackerFactory.createInstance(idTrackerType);
+    nodes = IdTrackerFactory.createInstance(IdTrackerType.Dynamic);
+    ways = IdTrackerFactory.createInstance(IdTrackerType.Dynamic);
   }
 
   public boolean containsNode(long nodeId)
