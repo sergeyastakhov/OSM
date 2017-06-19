@@ -60,7 +60,7 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void initialize(Map<String, Object> metaData) {}
+  public void initialize(Map<String, Object> metaData) { sink.initialize(metaData); }
 
   @Override
   public void process(EntityContainer entityContainer)

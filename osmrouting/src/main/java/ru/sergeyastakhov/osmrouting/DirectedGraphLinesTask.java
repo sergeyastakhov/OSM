@@ -36,7 +36,7 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void initialize(Map<String, Object> metaData) {}
+  public void initialize(Map<String, Object> metaData) { sink.initialize(metaData); }
 
   @Override
   public void setSink(Sink _sink)
