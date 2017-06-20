@@ -67,6 +67,8 @@ public class AreaBuilder
 
     for( LinearRing outerRing : outerRings )
     {
+      Geometry outerArea = outerRing.convexHull();
+
       List<LinearRing> innerRings = new ArrayList<>();
 
       if( innerLines != null )
@@ -75,7 +77,7 @@ public class AreaBuilder
         {
           LineString innerLine = iterator.next();
 
-          if( outerRing.covers(innerLine) )
+          if( outerArea.covers(innerLine) )
           {
             if( innerLine.isRing() )
             {
@@ -96,6 +98,11 @@ public class AreaBuilder
       polygons.add(polygon);
     }
 
+    if( innerLines != null && !innerLines.isEmpty() )
+    {
+      log.fine("Entity " + entity + ": Inner lines is outside outer - " + innerLines);
+    }
+
     if( polygons.isEmpty() )
     {
       return null;
@@ -103,11 +110,19 @@ public class AreaBuilder
 
     if( polygons.size() == 1 )
     {
-      return polygons.get(0);
+      Polygon polygon = polygons.get(0);
+
+      polygon.normalize();
+
+      return polygon.isValid() ? polygon : null;
     }
 
     Polygon[] array = polygons.toArray(new Polygon[polygons.size()]);
 
-    return geometryFactory.createMultiPolygon(array);
+    MultiPolygon multiPolygon = geometryFactory.createMultiPolygon(array);
+
+    multiPolygon.normalize();
+
+    return multiPolygon.isValid() ? multiPolygon : null;
   }
 }

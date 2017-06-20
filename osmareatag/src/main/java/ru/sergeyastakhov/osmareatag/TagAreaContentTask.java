@@ -39,11 +39,15 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
   public static final String TAG_TYPE = "type";
 
   public static final String TYPE_MULTIPOLYGON = "multipolygon";
+  public static final String TYPE_BOUNDARY = "boundary";
 
   private Sink sink;
 
   private String areaTagName;
   private Set<String> areaTagValues;
+
+  private String markEntityTagName;
+  private Set<String> markEntityTagValues;
 
   private IndexedObjectStore<NodeContainer> indexedNodes;
   private IndexedObjectStore<WayContainer> indexedWays;
@@ -60,11 +64,18 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
   private Tag insideTag;
   private Tag outsideTag;
 
-  public TagAreaContentTask(String _areaTagName, String[] _areaTagValues, Tag _insideTag, Tag _outsideTag)
+  public TagAreaContentTask
+      (String _areaTagName, String[] _areaTagValues,
+       String _markEntityTagName, String[] _markEntityTagValues,
+       Tag _insideTag, Tag _outsideTag)
   {
     areaTagName = _areaTagName;
-    areaTagValues = new HashSet<>();
+    areaTagValues = new HashSet<>(_areaTagValues.length);
     areaTagValues.addAll(Arrays.asList(_areaTagValues));
+
+    markEntityTagName = _markEntityTagName;
+    markEntityTagValues = new HashSet<>(_markEntityTagValues.length);
+    markEntityTagValues.addAll(Arrays.asList(_markEntityTagValues));
 
     insideTag = _insideTag;
     outsideTag = _outsideTag;
@@ -141,16 +152,14 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
 
     String typeValue = tags.get(TAG_TYPE);
 
-    if( typeValue == null || !typeValue.equals(TYPE_MULTIPOLYGON) )
+    // Обрабатываем только мультиполигоны
+    if( typeValue != null && (typeValue.equals(TYPE_MULTIPOLYGON) || typeValue.equals(TYPE_BOUNDARY)) )
     {
-      // Обрабатываем только мультиполигоны
-      return;
-    }
-
-    String areaTagValue = tags.get(areaTagName);
-    if( areaTagValue != null && areaTagValues.contains(areaTagValue) )
-    {
-      areaRelations.add(relationContainer);
+      String areaTagValue = tags.get(areaTagName);
+      if( areaTagValue != null && areaTagValues.contains(areaTagValue) )
+      {
+        areaRelations.add(relationContainer);
+      }
     }
   }
 
@@ -254,6 +263,27 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
       NodeContainer nodeContainer = nodeIterator.next();
 
       Node node = nodeContainer.getEntity();
+
+      Map<String, String> tags = ((TagCollection) node.getTags()).buildMap();
+
+      String tagValue = tags.get(markEntityTagName);
+
+      if( tagValue != null && markEntityTagValues.contains(tagValue) )
+      {
+        String entityName = "node #" + node.getId();
+
+        try
+        {
+          Point nodePoint = geometryFactory.createPoint(new Coordinate(node.getLongitude(), node.getLatitude()));
+
+          nodeContainer = markEntityArea(nodeContainer, nodePoint);
+        }
+        catch( Exception ex )
+        {
+          log.warning("Error processing " + entityName + " : " + ex);
+        }
+      }
+
       long nodeId = node.getId();
 
       sink.process(nodeContainer);
@@ -267,17 +297,24 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
       WayContainer wayContainer = wayIterator.next();
       Way way = wayContainer.getEntity();
 
-      String entityName = "way #" + way.getId();
+      Map<String, String> tags = ((TagCollection) way.getTags()).buildMap();
 
-      try
-      {
-        LineString wayLine = lineFactory.createLineString(way);
+      String tagValue = tags.get(markEntityTagName);
 
-        wayContainer = markEntityArea(wayContainer, wayLine);
-      }
-      catch( Exception ex )
+      if( tagValue != null && (markEntityTagValues.isEmpty() || markEntityTagValues.contains(tagValue)) )
       {
-        log.warning("Error processing " + entityName + " : " + ex);
+        String entityName = "way #" + way.getId();
+
+        try
+        {
+          LineString wayLine = lineFactory.createLineString(way);
+
+          wayContainer = markEntityArea(wayContainer, wayLine);
+        }
+        catch( Exception ex )
+        {
+          log.warning("Error processing " + entityName + " : " + ex);
+        }
       }
 
       sink.process(wayContainer);
@@ -293,15 +330,18 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
 
       Relation relation = relationContainer.getEntity();
 
-      long relationId = relation.getId();
-      String entityName = "relation #" + relationId;
-
       Map<String, String> tags = ((TagCollection) relation.getTags()).buildMap();
 
       String typeValue = tags.get(TAG_TYPE);
+      String tagValue = tags.get(markEntityTagName);
 
-      if( typeValue != null && typeValue.equals(TYPE_MULTIPOLYGON) )
+      if( typeValue != null && (typeValue.equals(TYPE_MULTIPOLYGON) || typeValue.equals(TYPE_BOUNDARY)) &&
+          tagValue != null && (markEntityTagValues.isEmpty() || markEntityTagValues.contains(tagValue)) )
       {
+        long relationId = relation.getId();
+
+        String entityName = "relation #" + relationId;
+
         try
         {
           Geometry geometry = getRelationGeometry(wayReader, geometryFactory, lineFactory, relation, entityName);
@@ -336,9 +376,11 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
 
   private <E extends EntityContainer> E markEntityArea(E entityContainer, Geometry entityGeometry)
   {
+    entityContainer = (E) entityContainer.getWriteableInstance();
+
     Entity entity = entityContainer.getEntity();
 
-    EntityArea<?> insideArea = null;
+    boolean insideArea = false;
 
     List<EntityArea<?>> areas = areaIndex.query(entityGeometry.getEnvelopeInternal());
 
@@ -347,24 +389,16 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
       if( area.entity.equals(entity) )
         continue;
 
-      IntersectionMatrix relate = area.geometry.relate(entityGeometry);
-
-      entityContainer = (E) entityContainer.getWriteableInstance();
-
-      if( relate.isCovers() )
+      if( area.prepGeometry.covers(entityGeometry) )
       {
-        insideArea = area;
-        break;
+        tagInsideEntity(entity, area);
+        insideArea = true;
       }
     }
 
-    if( insideArea != null )
+    if( !insideArea )
     {
-      tagInsideEntity(entityContainer.getEntity(),insideArea);
-    }
-    else
-    {
-      tagOutsideEntity(entityContainer.getEntity());
+      tagOutsideEntity(entity);
     }
 
     return entityContainer;
@@ -409,19 +443,21 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
     if( insideTag == null )
       return;
 
+    Tag markTag = area.resolveTag(insideTag);
+
     Collection<Tag> tags = entity.getTags();
 
     for( Tag tag : tags )
     {
       String tagName = tag.getKey();
 
-      if( tagName.equals(insideTag.getKey()) )
+      if( tagName.equals(markTag.getKey()) )
       {
         return;
       }
     }
 
-    tags.add(area.resolveTag(insideTag));
+    tags.add(markTag);
   }
 
   private void tagOutsideEntity(Entity entity)

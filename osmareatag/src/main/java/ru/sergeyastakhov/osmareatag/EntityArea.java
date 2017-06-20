@@ -6,6 +6,8 @@
 package ru.sergeyastakhov.osmareatag;
 
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.prep.PreparedGeometry;
+import com.vividsolutions.jts.geom.prep.PreparedGeometryFactory;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.TagCollection;
@@ -21,6 +23,8 @@ public class EntityArea<E extends Entity>
   Geometry geometry;
   E entity;
 
+  PreparedGeometry prepGeometry;
+
   Map<String, String> tags;
 
   KeywordSubst tagResolver;
@@ -30,6 +34,8 @@ public class EntityArea<E extends Entity>
   {
     geometry = _geometry;
     entity = _entity;
+
+    prepGeometry = PreparedGeometryFactory.prepare(geometry);
 
     tags = ((TagCollection) entity.getTags()).buildMap();
     tagResolver = new KeywordSubst(tags);

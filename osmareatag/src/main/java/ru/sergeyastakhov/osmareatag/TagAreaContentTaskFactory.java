@@ -24,20 +24,26 @@ public class TagAreaContentTaskFactory extends TaskManagerFactory
     String areaTagName = getStringArgument(taskConfig, "areaTagName");
     String[] areaTagValues = getStringArgument(taskConfig, "areaTagValue").split(";");
 
+    String markEntityTagName = getStringArgument(taskConfig, "markEntityTagName");
+
+    String markEntityTagValue = getStringArgument(taskConfig, "markEntityTagValue", null);
+
+    String[] markEntityTagValues = markEntityTagValue != null ? markEntityTagValue.split(";") : new String[0];
+
     String insideTagStr = getStringArgument(taskConfig, "insideTag", null);
     Tag insideTag = null;
 
     if( insideTagStr != null )
     {
-      String[] split = insideTagStr.split("=");
-      if( split.length != 2 )
+      int index = insideTagStr.indexOf('=');
+      if( index == -1 )
       {
         throw new OsmosisRuntimeException(
             "Argument insideTag for task " + taskConfig.getId()
                 + " must contain tag expression. Examples: \"maxspeed=RU:urban\" \"is_in:${place}=${name}\"");
       }
 
-      insideTag = new Tag(split[0], split[1]);
+      insideTag = new Tag(insideTagStr.substring(0, index), insideTagStr.substring(index + 1));
     }
 
     String outsideTagStr = getStringArgument(taskConfig, "outsideTag", null);
@@ -46,20 +52,20 @@ public class TagAreaContentTaskFactory extends TaskManagerFactory
 
     if( outsideTagStr != null )
     {
-      String[] split = outsideTagStr.split("=");
-      if( split.length != 2 )
+      int index = outsideTagStr.indexOf('=');
+      if( index == -1 )
       {
         throw new OsmosisRuntimeException(
             "Argument outsideTag for task " + taskConfig.getId()
                 + " must contain tag expression. Example: \"maxspeed=RU:rural\"");
       }
 
-      outsideTag = new Tag(split[0], split[1]);
+      outsideTag = new Tag(outsideTagStr.substring(0, index), outsideTagStr.substring(index + 1));
     }
 
     return new SinkSourceManager(
         taskConfig.getId(),
-        new TagAreaContentTask(areaTagName, areaTagValues, insideTag, outsideTag),
+        new TagAreaContentTask(areaTagName, areaTagValues, markEntityTagName, markEntityTagValues, insideTag, outsideTag),
         taskConfig.getPipeArgs()
     );
   }
