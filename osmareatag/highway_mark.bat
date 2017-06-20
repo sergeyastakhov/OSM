@@ -1,0 +1,1 @@
+call osmosis --read-pbf RU-LEN.osm.pbf --lp --bb clipIncompleteEntities=true --tag-area-content areaTagName=place areaTagValue=city;town;village;hamlet;isolated_dwelling;allotments insideTag=is_in:${place}=${name} outsideTag=maxspeed:def=RU:rural --tf accept-ways highway=* --tf reject-relations --un --write-xml RU-LEN.hwarea.osm.gz 2>out

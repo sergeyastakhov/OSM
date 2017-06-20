@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+
+<!DOCTYPE plugin PUBLIC "-//JPF//Java Plug-in Manifest 1.0" "http://jpf.sourceforge.net/plugin_1_0.dtd">
+
+<plugin id="OSMAreaTag" version="1.0">
+
+  <requires>
+    <import plugin-id="org.openstreetmap.osmosis.core.plugin.Core"
+            plugin-version="0.43" reverse-lookup="false"/>
+  </requires>
+
+  <runtime>
+    <library id="code" path="osmareatag-1.0.jar" type="code"/>
+
+    <library id="lib-jts" path="lib/jts-1.13.jar" type="code"/>
+  </runtime>
+
+  <extension plugin-id="org.openstreetmap.osmosis.core.plugin.Core"
+             point-id="Task" id="OSMAreaTag/OSMAreaTag-Task">
+    <parameter id="name" value="OSMAreaTag"/>
+    <parameter id="class" value="ru.sergeyastakhov.osmareatag.OSMAreaTagPlugin"/>
+  </extension>
+</plugin>
