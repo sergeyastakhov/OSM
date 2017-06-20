@@ -1,7 +1,7 @@
 /**
  * TagAreaContentTaskFactory.java
  * <p>
- * Copyright (C) 2017 RNIC. All Rights Reserved
+ * Copyright (C) 2017 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osmareatag;
 
