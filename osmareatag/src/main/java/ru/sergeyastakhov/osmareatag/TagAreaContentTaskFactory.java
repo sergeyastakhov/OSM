@@ -22,13 +22,13 @@ public class TagAreaContentTaskFactory extends TaskManagerFactory
   protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig)
   {
     String areaTagName = getStringArgument(taskConfig, "areaTagName");
-    String[] areaTagValues = getStringArgument(taskConfig, "areaTagValue").split(";");
+    String[] areaTagValues = getStringArgument(taskConfig, "areaTagValue").split("\\|");
 
     String markEntityTagName = getStringArgument(taskConfig, "markEntityTagName");
 
     String markEntityTagValue = getStringArgument(taskConfig, "markEntityTagValue", null);
 
-    String[] markEntityTagValues = markEntityTagValue != null ? markEntityTagValue.split(";") : new String[0];
+    String[] markEntityTagValues = markEntityTagValue != null ? markEntityTagValue.split("\\|") : new String[0];
 
     String insideTagStr = getStringArgument(taskConfig, "insideTag", null);
     Tag insideTag = null;

@@ -23,6 +23,7 @@ public class OSMAreaTagPlugin implements PluginLoader
     Map<String, TaskManagerFactory> map = new HashMap<>();
 
     map.put("tag-area-content", new TagAreaContentTaskFactory());
+    map.put("tag-relation-content", new TagRelationContentTaskFactory());
 
     return map;
   }
