@@ -425,7 +425,7 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
       LineString lineString = lineFactory.createLineString(way);
 
       String role = relationMember.getMemberRole();
-      if( role == null || role.length() == 0 || role.equals(ROLE_OUTER) )
+      if( role == null || role.isEmpty() || role.equals(ROLE_OUTER) )
       {
         areaBuilder.addOuterLine(lineString);
       }
