@@ -5,13 +5,13 @@
  */
 package ru.sergeyastakhov.osmareatag;
 
-import com.vividsolutions.jts.geom.*;
-import com.vividsolutions.jts.index.strtree.STRtree;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.PrecisionModel;
 import org.openstreetmap.osmosis.core.container.v0_6.*;
-import org.openstreetmap.osmosis.core.domain.v0_6.*;
-import org.openstreetmap.osmosis.core.filter.common.IdTracker;
-import org.openstreetmap.osmosis.core.filter.common.IdTrackerFactory;
-import org.openstreetmap.osmosis.core.filter.common.IdTrackerType;
+import org.openstreetmap.osmosis.core.domain.v0_6.Node;
+import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
+import org.openstreetmap.osmosis.core.domain.v0_6.TagCollection;
+import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.lifecycle.ReleasableIterator;
 import org.openstreetmap.osmosis.core.store.IndexedObjectStore;
 import org.openstreetmap.osmosis.core.store.IndexedObjectStoreReader;
@@ -19,8 +19,9 @@ import org.openstreetmap.osmosis.core.store.SimpleObjectStore;
 import org.openstreetmap.osmosis.core.store.SingleClassObjectSerializationFactory;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.core.task.v0_6.SinkSource;
+import ru.sergeyastakhov.osmareatag.rules.TagProcessing;
 
-import java.util.*;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -33,9 +34,6 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
 
   private static final int SRID_WGS84 = 4326;
 
-  private static final String ROLE_OUTER = "outer";
-  private static final String ROLE_INNER = "inner";
-
   public static final String TAG_TYPE = "type";
 
   public static final String TYPE_MULTIPOLYGON = "multipolygon";
@@ -43,42 +41,21 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
 
   private Sink sink;
 
-  private String areaTagName;
-  private Set<String> areaTagValues;
+  private TagProcessing tagProcessing;
 
-  private String markEntityTagName;
-  private Set<String> markEntityTagValues;
+  private boolean prepareOnly;
 
   private IndexedObjectStore<NodeContainer> indexedNodes;
   private IndexedObjectStore<WayContainer> indexedWays;
-
-  private IdTracker areaWays;
-  private SimpleObjectStore<RelationContainer> areaRelations;
 
   private SimpleObjectStore<NodeContainer> allNodes;
   private SimpleObjectStore<WayContainer> allWays;
   private SimpleObjectStore<RelationContainer> allRelations;
 
-  private STRtree areaIndex;
-
-  private Tag insideTag;
-  private Tag outsideTag;
-
-  public TagAreaContentTask
-      (String _areaTagName, String[] _areaTagValues,
-       String _markEntityTagName, String[] _markEntityTagValues,
-       Tag _insideTag, Tag _outsideTag)
+  public TagAreaContentTask(TagProcessing _tagProcessing, boolean _prepareOnly)
   {
-    areaTagName = _areaTagName;
-    areaTagValues = new HashSet<>(_areaTagValues.length);
-    areaTagValues.addAll(Arrays.asList(_areaTagValues));
-
-    markEntityTagName = _markEntityTagName;
-    markEntityTagValues = new HashSet<>(_markEntityTagValues.length);
-    markEntityTagValues.addAll(Arrays.asList(_markEntityTagValues));
-
-    insideTag = _insideTag;
-    outsideTag = _outsideTag;
+    tagProcessing = _tagProcessing;
+    prepareOnly = _prepareOnly;
   }
 
   @Override
@@ -86,14 +63,12 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
   {
     sink.initialize(metaData);
 
+    tagProcessing.initialize(metaData);
+
     indexedNodes = new IndexedObjectStore<>(
         new SingleClassObjectSerializationFactory(NodeContainer.class), "tact_nd");
     indexedWays = new IndexedObjectStore<>(
         new SingleClassObjectSerializationFactory(WayContainer.class), "tact_wy");
-
-    areaWays = IdTrackerFactory.createInstance(IdTrackerType.Dynamic);
-    areaRelations = new SimpleObjectStore<>(
-        new SingleClassObjectSerializationFactory(RelationContainer.class), "tact_rl", true);
 
     allNodes = new SimpleObjectStore<>(
         new SingleClassObjectSerializationFactory(NodeContainer.class), "tact_and", true);
@@ -101,9 +76,6 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
         new SingleClassObjectSerializationFactory(WayContainer.class), "tact_awy", true);
     allRelations = new SimpleObjectStore<>(
         new SingleClassObjectSerializationFactory(RelationContainer.class), "tact_arl", true);
-
-
-    areaIndex = new STRtree();
   }
 
 
@@ -113,7 +85,10 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
   @Override
   public void process(NodeContainer nodeContainer)
   {
-    allNodes.add(nodeContainer);
+    if( !prepareOnly )
+    {
+      allNodes.add(nodeContainer);
+    }
 
     Node node = nodeContainer.getEntity();
     long nodeId = node.getId();
@@ -123,7 +98,10 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
   @Override
   public void process(WayContainer wayContainer)
   {
-    allWays.add(wayContainer);
+    if( !prepareOnly )
+    {
+      allWays.add(wayContainer);
+    }
 
     Way way = wayContainer.getEntity();
 
@@ -132,17 +110,16 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
 
     Map<String, String> tags = ((TagCollection) way.getTags()).buildMap();
 
-    String areaTagValue = tags.get(areaTagName);
-    if( areaTagValue != null && areaTagValues.contains(areaTagValue) )
-    {
-      areaWays.set(wayId);
-    }
+    tagProcessing.prepareAreaRules(wayContainer, tags);
   }
 
   @Override
   public void process(RelationContainer relationContainer)
   {
-    allRelations.add(relationContainer);
+    if( !prepareOnly )
+    {
+      allRelations.add(relationContainer);
+    }
 
     Relation relation = relationContainer.getEntity();
 
@@ -155,11 +132,7 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
     // Обрабатываем только мультиполигоны
     if( typeValue != null && (typeValue.equals(TYPE_MULTIPOLYGON) || typeValue.equals(TYPE_BOUNDARY)) )
     {
-      String areaTagValue = tags.get(areaTagName);
-      if( areaTagValue != null && areaTagValues.contains(areaTagValue) )
-      {
-        areaRelations.add(relationContainer);
-      }
+      tagProcessing.prepareAreaRules(relationContainer, tags);
     }
   }
 
@@ -175,309 +148,115 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
     indexedNodes.complete();
     indexedWays.complete();
 
-    areaRelations.complete();
-
     allNodes.complete();
     allWays.complete();
     allRelations.complete();
 
-    log.info("Creating area spatial index...");
+    log.info("Creating area spatial indexes...");
+
+    tagProcessing.complete();
 
     IndexedObjectStoreReader<NodeContainer> nodeReader = indexedNodes.createReader();
     IndexedObjectStoreReader<WayContainer> wayReader = indexedWays.createReader();
 
     GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), SRID_WGS84);
 
-    LineFactory lineFactory = new LineFactory(geometryFactory, nodeReader);
+    EntityGeometryFactory entityGeometryFactory = new EntityGeometryFactoryImpl(geometryFactory, nodeReader, wayReader);
 
-    for( Long wayId : areaWays )
+    tagProcessing.buildIndexes(entityGeometryFactory);
+
+    if( !prepareOnly )
     {
-      String entityName = "way #" + wayId;
+      log.info("Send data");
 
-      WayContainer wayContainer = wayReader.get(wayId);
-      Way way = wayContainer.getEntity();
-
-      try
+      ReleasableIterator<NodeContainer> nodeIterator = allNodes.iterate();
+      while( nodeIterator.hasNext() )
       {
-        AreaBuilder areaBuilder = new AreaBuilder(geometryFactory);
+        NodeContainer nodeContainer = nodeIterator.next();
 
-        LineString outerLine = lineFactory.createLineString(way);
+        Node node = nodeContainer.getEntity();
 
-        areaBuilder.addOuterLine(outerLine);
+        Map<String, String> tags = ((TagCollection) node.getTags()).buildMap();
 
-        Geometry geometry = areaBuilder.createGeometry(entityName);
-
-        if( geometry != null )
-        {
-          areaIndex.insert(geometry.getEnvelopeInternal(), new EntityArea<>(geometry, way));
-        }
-        else
-        {
-          log.fine("Error processing " + entityName + " : Invalid geometry");
-        }
-      }
-      catch( Exception ex )
-      {
-        log.warning("Error processing " + entityName + " : " + ex);
-      }
-    }
-
-    ReleasableIterator<RelationContainer> areaRelationIterator = areaRelations.iterate();
-    while( areaRelationIterator.hasNext() )
-    {
-      RelationContainer relationContainer = areaRelationIterator.next();
-
-      Relation relation = relationContainer.getEntity();
-
-      long relationId = relation.getId();
-      String entityName = "relation #" + relationId;
-
-      try
-      {
-        Geometry geometry = getRelationGeometry(wayReader, geometryFactory, lineFactory, relation, entityName);
-
-        if( geometry != null )
-        {
-          areaIndex.insert(geometry.getEnvelopeInternal(), new EntityArea<>(geometry, relation));
-        }
-        else
-        {
-          log.fine("Error processing " + entityName + " : Invalid geometry");
-        }
-      }
-      catch( Exception ex )
-      {
-        log.warning("Error processing " + entityName + " : " + ex);
-      }
-    }
-
-    areaRelationIterator.release();
-
-    areaIndex.build();
-
-    log.info("Send data");
-
-    ReleasableIterator<NodeContainer> nodeIterator = allNodes.iterate();
-    while( nodeIterator.hasNext() )
-    {
-      NodeContainer nodeContainer = nodeIterator.next();
-
-      Node node = nodeContainer.getEntity();
-
-      Map<String, String> tags = ((TagCollection) node.getTags()).buildMap();
-
-      String tagValue = tags.get(markEntityTagName);
-
-      if( tagValue != null && markEntityTagValues.contains(tagValue) )
-      {
         String entityName = "node #" + node.getId();
 
         try
         {
-          Point nodePoint = geometryFactory.createPoint(new Coordinate(node.getLongitude(), node.getLatitude()));
-
-          nodeContainer = markEntityArea(nodeContainer, nodePoint);
+          nodeContainer = tagProcessing.processEntity(nodeContainer, tags, entityGeometryFactory);
         }
         catch( Exception ex )
         {
           log.warning("Error processing " + entityName + " : " + ex);
         }
+
+        sink.process(nodeContainer);
       }
 
-      long nodeId = node.getId();
+      nodeIterator.release();
 
-      sink.process(nodeContainer);
-    }
-
-    nodeIterator.release();
-
-    ReleasableIterator<WayContainer> wayIterator = allWays.iterate();
-    while( wayIterator.hasNext() )
-    {
-      WayContainer wayContainer = wayIterator.next();
-      Way way = wayContainer.getEntity();
-
-      Map<String, String> tags = ((TagCollection) way.getTags()).buildMap();
-
-      String tagValue = tags.get(markEntityTagName);
-
-      if( tagValue != null && (markEntityTagValues.isEmpty() || markEntityTagValues.contains(tagValue)) )
+      ReleasableIterator<WayContainer> wayIterator = allWays.iterate();
+      while( wayIterator.hasNext() )
       {
+        WayContainer wayContainer = wayIterator.next();
+        Way way = wayContainer.getEntity();
+
+        Map<String, String> tags = ((TagCollection) way.getTags()).buildMap();
+
         String entityName = "way #" + way.getId();
 
         try
         {
-          LineString wayLine = lineFactory.createLineString(way);
-
-          wayContainer = markEntityArea(wayContainer, wayLine);
+          wayContainer = tagProcessing.processEntity(wayContainer, tags, entityGeometryFactory);
         }
         catch( Exception ex )
         {
           log.warning("Error processing " + entityName + " : " + ex);
         }
+        sink.process(wayContainer);
       }
 
-      sink.process(wayContainer);
-    }
-
-    wayIterator.release();
+      wayIterator.release();
 
 
-    ReleasableIterator<RelationContainer> relationIterator = allRelations.iterate();
-    while( relationIterator.hasNext() )
-    {
-      RelationContainer relationContainer = relationIterator.next();
-
-      Relation relation = relationContainer.getEntity();
-
-      Map<String, String> tags = ((TagCollection) relation.getTags()).buildMap();
-
-      String typeValue = tags.get(TAG_TYPE);
-      String tagValue = tags.get(markEntityTagName);
-
-      if( typeValue != null && (typeValue.equals(TYPE_MULTIPOLYGON) || typeValue.equals(TYPE_BOUNDARY)) &&
-          tagValue != null && (markEntityTagValues.isEmpty() || markEntityTagValues.contains(tagValue)) )
+      ReleasableIterator<RelationContainer> relationIterator = allRelations.iterate();
+      while( relationIterator.hasNext() )
       {
-        long relationId = relation.getId();
+        RelationContainer relationContainer = relationIterator.next();
 
-        String entityName = "relation #" + relationId;
+        Relation relation = relationContainer.getEntity();
 
-        try
+        Map<String, String> tags = ((TagCollection) relation.getTags()).buildMap();
+
+        String typeValue = tags.get(TAG_TYPE);
+
+        if( typeValue != null && (typeValue.equals(TYPE_MULTIPOLYGON) || typeValue.equals(TYPE_BOUNDARY)) )
         {
-          Geometry geometry = getRelationGeometry(wayReader, geometryFactory, lineFactory, relation, entityName);
+          long relationId = relation.getId();
 
-          if( geometry != null )
+          String entityName = "relation #" + relationId;
+
+          try
           {
-            relationContainer = markEntityArea(relationContainer, geometry);
+            relationContainer = tagProcessing.processEntity(relationContainer, tags, entityGeometryFactory);
           }
-          else
+          catch( Exception ex )
           {
-            log.fine("Error processing " + entityName + " : Invalid geometry");
+            log.warning("Error processing " + entityName + " : " + ex);
           }
         }
-        catch( Exception ex )
-        {
-          log.warning("Error processing " + entityName + " : " + ex);
-        }
+
+        sink.process(relationContainer);
       }
 
-      sink.process(relationContainer);
-    }
+      relationIterator.release();
 
-    relationIterator.release();
+      log.info("Sending complete.");
+    }
 
     nodeReader.release();
     wayReader.release();
 
-    log.info("Sending complete.");
-
     sink.complete();
-  }
-
-  private <E extends EntityContainer> E markEntityArea(E entityContainer, Geometry entityGeometry)
-  {
-    entityContainer = (E) entityContainer.getWriteableInstance();
-
-    Entity entity = entityContainer.getEntity();
-
-    boolean insideArea = false;
-
-    List<EntityArea<?>> areas = areaIndex.query(entityGeometry.getEnvelopeInternal());
-
-    for( EntityArea<?> area : areas )
-    {
-      if( area.entity.equals(entity) )
-        continue;
-
-      if( area.prepGeometry.covers(entityGeometry) )
-      {
-        tagInsideEntity(entity, area);
-        insideArea = true;
-      }
-    }
-
-    if( !insideArea )
-    {
-      tagOutsideEntity(entity);
-    }
-
-    return entityContainer;
-  }
-
-  private Geometry getRelationGeometry
-      (IndexedObjectStoreReader<WayContainer> _wayReader,
-       GeometryFactory geometryFactory, LineFactory lineFactory, Relation relation,
-       String entityName)
-  {
-    AreaBuilder areaBuilder = new AreaBuilder(geometryFactory);
-
-    for( RelationMember relationMember : relation.getMembers() )
-    {
-      EntityType memberType = relationMember.getMemberType();
-      if( memberType != EntityType.Way )
-        continue;
-
-      long memberId = relationMember.getMemberId();
-
-      WayContainer wayContainer = _wayReader.get(memberId);
-      Way way = wayContainer.getEntity();
-
-      LineString lineString = lineFactory.createLineString(way);
-
-      String role = relationMember.getMemberRole();
-      if( role == null || role.isEmpty() || role.equals(ROLE_OUTER) )
-      {
-        areaBuilder.addOuterLine(lineString);
-      }
-      else if( role.equals(ROLE_INNER) )
-      {
-        areaBuilder.addInnerLine(lineString);
-      }
-    }
-
-    return areaBuilder.createGeometry(entityName);
-  }
-
-  private void tagInsideEntity(Entity entity, EntityArea<?> area)
-  {
-    if( insideTag == null )
-      return;
-
-    Tag markTag = area.resolveTag(insideTag);
-
-    Collection<Tag> tags = entity.getTags();
-
-    for( Tag tag : tags )
-    {
-      String tagName = tag.getKey();
-
-      if( tagName.equals(markTag.getKey()) )
-      {
-        return;
-      }
-    }
-
-    tags.add(markTag);
-  }
-
-  private void tagOutsideEntity(Entity entity)
-  {
-    if( outsideTag == null )
-      return;
-
-    Collection<Tag> tags = entity.getTags();
-
-    for( Tag tag : tags )
-    {
-      String tagName = tag.getKey();
-
-      if( tagName.equals(outsideTag.getKey()) )
-      {
-        return;
-      }
-    }
-
-    tags.add(outsideTag);
   }
 
   @Override
@@ -488,13 +267,9 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
     indexedNodes.release();
     indexedWays.release();
 
-    areaRelations.release();
-
     allNodes.release();
     allWays.release();
     allRelations.release();
-
-    areaIndex = null;
   }
 
   @Override

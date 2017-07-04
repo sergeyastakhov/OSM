@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tag-rules>
+<tag-processing>
   <area id="national-boundary" cache-file="national-boundary.idx">
     <match>
       <tag k="boundary" v="administrative"/>
@@ -16,48 +16,47 @@
       <tag k="place" v="city|town|village|hamlet|isolated_dwelling|allotments"/>
     </match>
   </area>
+<!--
   <relation id="route-road">
     <match>
       <tag k="route" v="road"/>
     </match>
   </relation>
+-->
 
   <transform>
     <name>Urban speeds</name>
     <match type="way">
-      <tag k="highway"/>
+      <tag k="highway" v="*"/>
       <inside area="national-boundary"/>
       <inside area="place"/>
     </match>
     <output>
-      <copy-all/>
-      <add-tag k="maxspeed" v="${ISO3166-1}:urban" context="national-boundary"/>
+      <add-tag k="maxspeed" v="${ISO3166-1}:urban" context-area="national-boundary"/>
     </output>
   </transform>
 
   <transform>
     <name>Rural speeds</name>
     <match type="way">
-      <tag k="highway"/>
+      <tag k="highway" v="*"/>
       <inside area="national-boundary"/>
       <outside area="place"/>
     </match>
     <output>
-      <copy-all/>
-      <add-tag k="maxspeed" v="${ISO3166-1}:rural" context="national-boundary"/>
+      <add-tag k="maxspeed" v="${ISO3166-1}:rural" context-area="national-boundary"/>
     </output>
   </transform>
 
   <transform>
     <name>Administrative units</name>
     <match type="way">
-      <tag k="highway"/>
+      <tag k="highway" v="*"/>
       <inside area="boundary-administrative"/>
     </match>
     <output>
-      <copy-all/>
-      <add-tag k="administrative:${admin_level}" v="${name}" context="boundary-administrative"/>
+      <add-tag k="administrative:${admin_level}" v="${name}" context-area="boundary-administrative"/>
     </output>
   </transform>
 
-</tag-rules>
+</tag-processing>

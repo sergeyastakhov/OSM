@@ -6,11 +6,12 @@
 package ru.sergeyastakhov.osmareatag;
 
 import org.openstreetmap.osmosis.core.OsmosisRuntimeException;
-import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.pipeline.common.TaskConfiguration;
 import org.openstreetmap.osmosis.core.pipeline.common.TaskManager;
 import org.openstreetmap.osmosis.core.pipeline.common.TaskManagerFactory;
 import org.openstreetmap.osmosis.core.pipeline.v0_6.SinkSourceManager;
+import ru.sergeyastakhov.osmareatag.rules.TagProcessing;
+import ru.sergeyastakhov.osmareatag.rules.XMLTagProcessingLoader;
 
 /**
  * @author Sergey Astakhov
@@ -21,51 +22,30 @@ public class TagAreaContentTaskFactory extends TaskManagerFactory
   @Override
   protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig)
   {
-    String areaTagName = getStringArgument(taskConfig, "areaTagName");
-    String[] areaTagValues = getStringArgument(taskConfig, "areaTagValue").split("\\|");
+    String configFile = getStringArgument(taskConfig, "file",
+        getDefaultStringArgument(taskConfig, "tag-processing.xml"));
 
-    String markEntityTagName = getStringArgument(taskConfig, "markEntityTagName");
+    boolean prepareOnly = getBooleanArgument(taskConfig, "prepareOnly", false);
 
-    String markEntityTagValue = getStringArgument(taskConfig, "markEntityTagValue", null);
+    TagProcessing tagProcessing;
 
-    String[] markEntityTagValues = markEntityTagValue != null ? markEntityTagValue.split("\\|") : new String[0];
-
-    String insideTagStr = getStringArgument(taskConfig, "insideTag", null);
-    Tag insideTag = null;
-
-    if( insideTagStr != null )
+    try
     {
-      int index = insideTagStr.indexOf('=');
-      if( index == -1 )
-      {
-        throw new OsmosisRuntimeException(
-            "Argument insideTag for task " + taskConfig.getId()
-                + " must contain tag expression. Examples: \"maxspeed=RU:urban\" \"is_in:${place}=${name}\"");
-      }
-
-      insideTag = new Tag(insideTagStr.substring(0, index), insideTagStr.substring(index + 1));
+      tagProcessing = new XMLTagProcessingLoader().load(configFile);
+    }
+    catch( Exception ex )
+    {
+      throw new OsmosisRuntimeException("Can't load tag processing config from file " + configFile, ex);
     }
 
-    String outsideTagStr = getStringArgument(taskConfig, "outsideTag", null);
-
-    Tag outsideTag = null;
-
-    if( outsideTagStr != null )
+    if( tagProcessing==null )
     {
-      int index = outsideTagStr.indexOf('=');
-      if( index == -1 )
-      {
-        throw new OsmosisRuntimeException(
-            "Argument outsideTag for task " + taskConfig.getId()
-                + " must contain tag expression. Example: \"maxspeed=RU:rural\"");
-      }
-
-      outsideTag = new Tag(outsideTagStr.substring(0, index), outsideTagStr.substring(index + 1));
+      throw new OsmosisRuntimeException("Can't find tag processing config in file " + configFile);
     }
 
     return new SinkSourceManager(
         taskConfig.getId(),
-        new TagAreaContentTask(areaTagName, areaTagValues, markEntityTagName, markEntityTagValues, insideTag, outsideTag),
+        new TagAreaContentTask(tagProcessing, prepareOnly),
         taskConfig.getPipeArgs()
     );
   }

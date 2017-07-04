@@ -48,4 +48,9 @@ public class EntityArea<E extends Entity>
 
     return new Tag(tagResolver.resolve(tagName), tagResolver.resolve(tagValue));
   }
+
+  public boolean isInside(Geometry geometry)
+  {
+    return prepGeometry.covers(geometry);
+  }
 }
