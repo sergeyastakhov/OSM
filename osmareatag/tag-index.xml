@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tag-processing>
+  <area id="national-boundary" cache-file="national-boundary.idx">
+    <match type="relation">
+      <tag k="boundary" v="administrative"/>
+      <tag k="admin_level" v="2"/>
+    </match>
+  </area>
+</tag-processing>

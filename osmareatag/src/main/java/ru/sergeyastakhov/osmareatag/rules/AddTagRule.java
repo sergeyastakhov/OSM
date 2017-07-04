@@ -29,15 +29,15 @@ public class AddTagRule implements OutputElement
   }
 
   @Override
-  public void apply(Collection<Tag> tags, Map<String, Collection<EntityArea<?>>> matchedResult)
+  public void apply(Collection<Tag> tags, Map<String, Collection<EntityArea>> matchedResult)
   {
     if( contextArea != null )
     {
-      Collection<EntityArea<?>> entityAreas = matchedResult.get(contextArea);
+      Collection<EntityArea> entityAreas = matchedResult.get(contextArea);
 
       if( entityAreas != null )
       {
-        for( EntityArea<?> area : entityAreas )
+        for( EntityArea area : entityAreas )
         {
           Tag addTag = area.resolveTag(tagTemplate);
 

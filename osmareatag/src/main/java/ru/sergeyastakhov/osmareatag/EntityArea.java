@@ -12,37 +12,47 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.TagCollection;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * @author Sergey Astakhov
  * @version $Revision$
  */
-public class EntityArea<E extends Entity>
+public class EntityArea implements Serializable
 {
-  Geometry geometry;
-  E entity;
+  private static final long serialVersionUID = 1L;
 
-  PreparedGeometry prepGeometry;
+  private Geometry areaGeometry;
+  private Map<String, String> tags;
 
-  Map<String, String> tags;
+  private transient PreparedGeometry preparedAreaGeometry;
 
-  KeywordSubst tagResolver;
+  private transient KeywordSubst tagResolver;
 
 
-  public EntityArea(Geometry _geometry, E _entity)
+  public EntityArea(Geometry _areaGeometry, Entity entity)
   {
-    geometry = _geometry;
-    entity = _entity;
-
-    prepGeometry = PreparedGeometryFactory.prepare(geometry);
+    areaGeometry = _areaGeometry;
 
     tags = ((TagCollection) entity.getTags()).buildMap();
-    tagResolver = new KeywordSubst(tags);
+  }
+
+  @Override
+  public String toString()
+  {
+    return "EntityArea{" +
+        "tags#=" + tags.size() + " name=" + tags.get("name") +
+        '}';
   }
 
   public Tag resolveTag(Tag tagTemplate)
   {
+    if( tagResolver == null )
+    {
+      tagResolver = new KeywordSubst(tags);
+    }
+
     String tagName = tagTemplate.getKey();
     String tagValue = tagTemplate.getValue();
 
@@ -51,6 +61,11 @@ public class EntityArea<E extends Entity>
 
   public boolean isInside(Geometry geometry)
   {
-    return prepGeometry.covers(geometry);
+    if( preparedAreaGeometry == null )
+    {
+      preparedAreaGeometry = PreparedGeometryFactory.prepare(areaGeometry);
+    }
+
+    return preparedAreaGeometry.covers(geometry);
   }
 }

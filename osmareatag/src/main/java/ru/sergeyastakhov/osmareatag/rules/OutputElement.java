@@ -17,5 +17,5 @@ import java.util.Map;
  */
 public interface OutputElement
 {
-  void apply(Collection<Tag> tags, Map<String, Collection<EntityArea<?>>> matchedResult);
+  void apply(Collection<Tag> tags, Map<String, Collection<EntityArea>> matchedResult);
 }

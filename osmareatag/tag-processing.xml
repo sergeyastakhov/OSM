@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tag-processing>
   <area id="national-boundary" cache-file="national-boundary.idx">
-    <match>
+    <match type="relation">
       <tag k="boundary" v="administrative"/>
-      <tag k="admin_level" v="1"/>
+      <tag k="admin_level" v="2"/>
     </match>
   </area>
   <area id="boundary-administrative">
-    <match>
+    <match type="relation">
       <tag k="boundary" v="administrative"/>
     </match>
   </area>
@@ -27,7 +27,7 @@
   <transform>
     <name>Urban speeds</name>
     <match type="way">
-      <tag k="highway" v="*"/>
+      <tag k="highway" v=".*"/>
       <inside area="national-boundary"/>
       <inside area="place"/>
     </match>
@@ -39,7 +39,7 @@
   <transform>
     <name>Rural speeds</name>
     <match type="way">
-      <tag k="highway" v="*"/>
+      <tag k="highway" v=".*"/>
       <inside area="national-boundary"/>
       <outside area="place"/>
     </match>
@@ -51,7 +51,7 @@
   <transform>
     <name>Administrative units</name>
     <match type="way">
-      <tag k="highway" v="*"/>
+      <tag k="highway" v=".*"/>
       <inside area="boundary-administrative"/>
     </match>
     <output>

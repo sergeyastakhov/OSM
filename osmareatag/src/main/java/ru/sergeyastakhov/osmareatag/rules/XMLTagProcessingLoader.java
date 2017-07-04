@@ -12,6 +12,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * @author Sergey Astakhov
@@ -19,8 +20,12 @@ import java.io.IOException;
  */
 public class XMLTagProcessingLoader
 {
+  private static final Logger log = Logger.getLogger(XMLTagProcessingLoader.class.getName());
+
   public TagProcessing load(String file) throws SAXException, ParserConfigurationException, IOException
   {
+    log.info("Loading rules from "+file);
+
     SAXParserFactory factory = SAXParserFactory.newInstance();
 
     SAXParser saxParser = factory.newSAXParser();

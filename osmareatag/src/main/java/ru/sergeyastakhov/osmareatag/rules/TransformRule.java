@@ -39,7 +39,7 @@ public class TransformRule extends MatchOwner
   {
     Entity entity = entityContainer.getEntity();
 
-    Map<String, Collection<EntityArea<?>>> matchedResult = matchRule.match(entity, tags, geometryFactory, areaRuleMap);
+    Map<String, Collection<EntityArea>> matchedResult = matchRule.match(entity, tags, geometryFactory, areaRuleMap);
 
     if( matchedResult!=null )
     {

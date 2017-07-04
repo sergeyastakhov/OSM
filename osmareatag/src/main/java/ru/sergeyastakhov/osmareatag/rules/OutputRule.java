@@ -29,7 +29,7 @@ public class OutputRule
   }
 
   public <E extends EntityContainer> E processEntity(E entityContainer,
-                                                     Map<String, Collection<EntityArea<?>>> matchedResult)
+                                                     Map<String, Collection<EntityArea>> matchedResult)
   {
     entityContainer = (E) entityContainer.getWriteableInstance();
 

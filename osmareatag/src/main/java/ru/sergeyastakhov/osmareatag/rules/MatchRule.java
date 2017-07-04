@@ -64,17 +64,17 @@ public class MatchRule
     return true;
   }
 
-  public Map<String, Collection<EntityArea<?>>> match
+  public Map<String, Collection<EntityArea>> match
       (Entity entity, Map<String, String> tags, EntityGeometryFactory geometryFactory, Map<String, AreaRule> areaRuleMap)
   {
     if( !match(entity.getType(), tags) )
       return null;
 
-    Map<String, Collection<EntityArea<?>>> matchedAreas = new LinkedHashMap<>();
+    Map<String, Collection<EntityArea>> matchedAreas = new LinkedHashMap<>();
 
     for( GeometryMatcher matcher : geometryMatchers )
     {
-      Map<String, Collection<EntityArea<?>>> entityAreas = matcher.matchGeometry(entity, tags, geometryFactory, areaRuleMap);
+      Map<String, Collection<EntityArea>> entityAreas = matcher.matchGeometry(entity, tags, geometryFactory, areaRuleMap);
       if( entityAreas==null )
         return null;
 

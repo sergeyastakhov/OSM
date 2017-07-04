@@ -13,6 +13,7 @@ import ru.sergeyastakhov.osmareatag.EntityGeometryFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author Sergey Astakhov
@@ -20,12 +21,14 @@ import java.util.Map;
  */
 public class InsideRule implements GeometryMatcher
 {
+  private static final Logger log = Logger.getLogger(InsideRule.class.getName());
+
   private String area;
 
   public InsideRule(String _area) { area = _area; }
 
   @Override
-  public Map<String, Collection<EntityArea<?>>> matchGeometry
+  public Map<String, Collection<EntityArea>> matchGeometry
       (Entity entity, Map<String, String> tags,
        EntityGeometryFactory geometryFactory,
        Map<String, AreaRule> areaRuleMap)
@@ -40,6 +43,10 @@ public class InsideRule implements GeometryMatcher
     if( geometry == null )
       return null;
 
-    return Collections.singletonMap(area, areaRule.getAreas(geometry));
+    Collection<EntityArea> areas = areaRule.getAreas(geometry);
+
+    log.info("Entity " + entity + " area=" + area + " areas=" + areas);
+
+    return Collections.singletonMap(area, areas);
   }
 }

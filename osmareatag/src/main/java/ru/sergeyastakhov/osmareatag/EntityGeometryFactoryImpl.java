@@ -1,7 +1,7 @@
 /**
  * EntityGeometryFactoryImpl.java
  * <p>
- *  Copyright (C) 2017 Sergey Astakhov. All Rights Reserved
+ * Copyright (C) 2017 Sergey Astakhov. All Rights Reserved
  */
 package ru.sergeyastakhov.osmareatag;
 
@@ -14,12 +14,16 @@ import org.openstreetmap.osmosis.core.container.v0_6.WayContainer;
 import org.openstreetmap.osmosis.core.domain.v0_6.*;
 import org.openstreetmap.osmosis.core.store.IndexedObjectStoreReader;
 
+import java.util.logging.Logger;
+
 /**
  * @author Sergey Astakhov
  * @version $Revision$
  */
 public class EntityGeometryFactoryImpl implements EntityGeometryFactory
 {
+  private static final Logger log = Logger.getLogger(EntityGeometryFactoryImpl.class.getName());
+
   private static final String ROLE_OUTER = "outer";
   private static final String ROLE_INNER = "inner";
 
@@ -101,23 +105,29 @@ public class EntityGeometryFactoryImpl implements EntityGeometryFactory
 
       long memberId = relationMember.getMemberId();
 
-      WayContainer wayContainer = wayReader.get(memberId);
-      Way way = wayContainer.getEntity();
-
-      LineString lineString = lineFactory.createLineString(way);
-
-      String role = relationMember.getMemberRole();
-      if( role == null || role.isEmpty() || role.equals(ROLE_OUTER) )
+      try
       {
-        areaBuilder.addOuterLine(lineString);
+        WayContainer wayContainer = wayReader.get(memberId);
+        Way way = wayContainer.getEntity();
+
+        LineString lineString = lineFactory.createLineString(way);
+
+        String role = relationMember.getMemberRole();
+        if( role == null || role.isEmpty() || role.equals(ROLE_OUTER) )
+        {
+          areaBuilder.addOuterLine(lineString);
+        }
+        else if( role.equals(ROLE_INNER) )
+        {
+          areaBuilder.addInnerLine(lineString);
+        }
       }
-      else if( role.equals(ROLE_INNER) )
+      catch( Exception ex )
       {
-        areaBuilder.addInnerLine(lineString);
+        log.fine("Skipping bad member (" + memberType + "#" + memberId + ") in " + entityName + " : " + ex);
       }
     }
 
     return areaBuilder.createGeometry(entityName);
   }
-
 }

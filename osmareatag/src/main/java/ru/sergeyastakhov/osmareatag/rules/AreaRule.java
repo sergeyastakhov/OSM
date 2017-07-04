@@ -43,7 +43,7 @@ public class AreaRule extends MatchOwner implements Initializable
   public AreaRule(String _id, String _cacheFile)
   {
     id = _id;
-    cacheFile = _cacheFile!=null ? new File(_cacheFile) : null;
+    cacheFile = _cacheFile != null ? new File(_cacheFile) : null;
   }
 
   public String getId() { return id; }
@@ -52,14 +52,14 @@ public class AreaRule extends MatchOwner implements Initializable
   public void initialize(Map<String, Object> metaData)
   {
     areaEntities = new SimpleObjectStore<>(
-        new GenericObjectSerializationFactory(), "tact_rl", true);
+        new GenericObjectSerializationFactory(), "area_entity", true);
 
     if( cacheFile != null && cacheFile.exists() )
     {
       log.info("Loading index cache file " + cacheFile);
 
-      try( ObjectInputStream ois = new ObjectInputStream(
-          new BufferedInputStream(new FileInputStream(cacheFile))) )
+      try (ObjectInputStream ois = new ObjectInputStream(
+          new BufferedInputStream(new FileInputStream(cacheFile))))
       {
         areaIndex = (STRtree) ois.readObject();
         indexLoaded = true;
@@ -119,7 +119,9 @@ public class AreaRule extends MatchOwner implements Initializable
 
         if( geometry != null )
         {
-          areaIndex.insert(geometry.getEnvelopeInternal(), new EntityArea<>(geometry, entity));
+          log.fine("Adding entity " + entity + " to the index " + id);
+
+          areaIndex.insert(geometry.getEnvelopeInternal(), new EntityArea(geometry, entity));
         }
         else
         {
@@ -140,8 +142,8 @@ public class AreaRule extends MatchOwner implements Initializable
     {
       log.info("Writing index cache file " + cacheFile);
 
-      try( ObjectOutputStream oos = new ObjectOutputStream(
-          new BufferedOutputStream(new FileOutputStream(cacheFile))) )
+      try (ObjectOutputStream oos = new ObjectOutputStream(
+          new BufferedOutputStream(new FileOutputStream(cacheFile))))
       {
         oos.writeObject(areaIndex);
       }
@@ -152,13 +154,13 @@ public class AreaRule extends MatchOwner implements Initializable
     }
   }
 
-  public Collection<EntityArea<?>> getAreas(Geometry geometry)
+  public Collection<EntityArea> getAreas(Geometry geometry)
   {
-    Collection<EntityArea<?>> insideAreas = new ArrayList<>();
+    Collection<EntityArea> insideAreas = new ArrayList<>();
 
-    List<EntityArea<?>> areas = areaIndex.query(geometry.getEnvelopeInternal());
+    List<EntityArea> areas = areaIndex.query(geometry.getEnvelopeInternal());
 
-    for( EntityArea<?> area : areas )
+    for( EntityArea area : areas )
     {
       if( area.isInside(geometry) )
       {

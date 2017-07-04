@@ -18,6 +18,6 @@ import java.util.Map;
  */
 public interface GeometryMatcher
 {
-  Map<String, Collection<EntityArea<?>>> matchGeometry
+  Map<String, Collection<EntityArea>> matchGeometry
       (Entity entity, Map<String, String> tags, EntityGeometryFactory geometryFactory, Map<String, AreaRule> areaRuleMap);
 }

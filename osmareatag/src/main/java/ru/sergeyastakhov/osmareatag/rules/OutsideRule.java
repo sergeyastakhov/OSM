@@ -25,7 +25,7 @@ public class OutsideRule implements GeometryMatcher
   public OutsideRule(String _area) { area = _area; }
 
   @Override
-  public Map<String, Collection<EntityArea<?>>> matchGeometry
+  public Map<String, Collection<EntityArea>> matchGeometry
       (Entity entity, Map<String, String> tags,
        EntityGeometryFactory geometryFactory,
        Map<String, AreaRule> areaRuleMap)
@@ -40,7 +40,7 @@ public class OutsideRule implements GeometryMatcher
     if( geometry==null )
       return null;
 
-    Collection<EntityArea<?>> areas = areaRule.getAreas(geometry);
+    Collection<EntityArea> areas = areaRule.getAreas(geometry);
     if( !areas.isEmpty() )
       return null;
 
