@@ -13,8 +13,12 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.core.store.IndexedObjectStoreReader;
+import org.openstreetmap.osmosis.core.store.NoSuchIndexElementException;
+import ru.sergeyastakhov.osmareatag.rules.AreaRule;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author Sergey Astakhov
@@ -22,6 +26,8 @@ import java.util.List;
  */
 public class LineFactory
 {
+  private static final Logger log = Logger.getLogger(AreaRule.class.getName());
+
   private GeometryFactory geometryFactory;
   private IndexedObjectStoreReader<NodeContainer> nodeReader;
 
@@ -35,20 +41,25 @@ public class LineFactory
   {
     List<WayNode> wayNodes = way.getWayNodes();
 
-    Coordinate[] points = new Coordinate[wayNodes.size()];
+    List<Coordinate> points = new ArrayList<>(wayNodes.size());
 
-    for( int i = 0; i < wayNodes.size(); i++ )
+    for( WayNode wayNode : wayNodes )
     {
-      WayNode wayNode = wayNodes.get(i);
+      try
+      {
+        NodeContainer nodeContainer = nodeReader.get(wayNode.getNodeId());
 
-      NodeContainer nodeContainer = nodeReader.get(wayNode.getNodeId());
+        Node node = nodeContainer.getEntity();
 
-      Node node = nodeContainer.getEntity();
-
-      points[i] = new Coordinate(node.getLongitude(), node.getLatitude());
+        points.add(new Coordinate(node.getLongitude(), node.getLatitude()));
+      }
+      catch( NoSuchIndexElementException ex )
+      {
+        log.fine("Missing node "+wayNode + " in way "+way+", try to ignore");
+      }
     }
 
-    return points;
+    return points.toArray(new Coordinate[points.size()]);
   }
 
   public LineString createLineString(Way way)

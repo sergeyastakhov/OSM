@@ -31,11 +31,11 @@ public class EntityArea implements Serializable
   private transient KeywordSubst tagResolver;
 
 
-  public EntityArea(Geometry _areaGeometry, Entity entity)
+  public EntityArea(Geometry _areaGeometry, Map<String, String> _tags)
   {
     areaGeometry = _areaGeometry;
 
-    tags = ((TagCollection) entity.getTags()).buildMap();
+    tags = _tags;
   }
 
   @Override

@@ -6,9 +6,11 @@
 package ru.sergeyastakhov.osmareatag.rules;
 
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.index.strtree.STRtree;
 import org.openstreetmap.osmosis.core.container.v0_6.EntityContainer;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
+import org.openstreetmap.osmosis.core.domain.v0_6.TagCollection;
 import org.openstreetmap.osmosis.core.lifecycle.ReleasableIterator;
 import org.openstreetmap.osmosis.core.store.GenericObjectSerializationFactory;
 import org.openstreetmap.osmosis.core.store.SimpleObjectStore;
@@ -54,6 +56,8 @@ public class AreaRule extends MatchOwner implements Initializable
     areaEntities = new SimpleObjectStore<>(
         new GenericObjectSerializationFactory(), "area_entity", true);
 
+    areaIndex = new STRtree();
+
     if( cacheFile != null && cacheFile.exists() )
     {
       log.info("Loading index cache file " + cacheFile);
@@ -69,8 +73,6 @@ public class AreaRule extends MatchOwner implements Initializable
         log.log(Level.WARNING, "Error loading index cache file " + cacheFile + " : " + ex, ex);
       }
     }
-
-    areaIndex = new STRtree();
   }
 
   @Override
@@ -119,9 +121,29 @@ public class AreaRule extends MatchOwner implements Initializable
 
         if( geometry != null )
         {
-          log.fine("Adding entity " + entity + " to the index " + id);
+          Map<String, String> tags = ((TagCollection) entity.getTags()).buildMap();
 
-          areaIndex.insert(geometry.getEnvelopeInternal(), new EntityArea(geometry, entity));
+          if( geometry instanceof GeometryCollection )
+          {
+            GeometryCollection collection = (GeometryCollection) geometry;
+
+            int numGeometries = collection.getNumGeometries();
+
+            log.info("Adding entity " + entity + " name=" + tags.get("name") + " (" + numGeometries + " components) to the index " + id);
+
+            for( int i = 0; i < numGeometries; i++ )
+            {
+              Geometry geometryN = collection.getGeometryN(i);
+
+              areaIndex.insert(geometryN.getEnvelopeInternal(), new EntityArea(geometryN, tags));
+            }
+          }
+          else
+          {
+            log.fine("Adding entity " + entity + " name=" + tags.get("name") + " to the index " + id);
+
+            areaIndex.insert(geometry.getEnvelopeInternal(), new EntityArea(geometry, tags));
+          }
         }
         else
         {
