@@ -31,19 +31,19 @@ public class MapConversionTask
     @Override
     public int compare(MapConversionTask m1, MapConversionTask m2)
     {
-      int result = Integer.valueOf(m1.priority).compareTo(m2.priority);
+      int result = Integer.compare(m1.priority, m2.priority);
 
       if( result == 0 )
       {
         long l1 = m1.lastTryDate != null ? m1.lastTryDate.getTime() : 0;
         long l2 = m2.lastTryDate != null ? m2.lastTryDate.getTime() : 0;
 
-        result = Long.valueOf(l1).compareTo(l2);
+        result = Long.compare(l1, l2);
       }
 
       if( result == 0 )
       {
-        result = Integer.valueOf(m1.usedTime).compareTo(m2.usedTime);
+        result = Integer.compare(m1.usedTime, m2.usedTime);
       }
 
       if( result == 0 )
@@ -69,7 +69,7 @@ public class MapConversionTask
   private int priority;
   private String locTitle;
   private String title;
-  private String poly;
+  private String cfg;
   private String source;
   private String qaMode;
   private String customKeys;
@@ -90,7 +90,7 @@ public class MapConversionTask
     locTitle = fields[3].trim();
     title = fields[4].trim();
 
-    poly = fields[5].trim();
+    cfg = fields[5].trim();
     source = fields[6].trim();
     qaMode = fields[7].trim();
     customKeys = fields[8].trim();
@@ -124,7 +124,7 @@ public class MapConversionTask
 
     return String.format
         ("%-11s | %-11s | %-2s | %-32s | %-32s | %-10s | %-20s | %-3s | %-45s | %-20s | %-20s | %-20s | %-3s | %-3s",
-            code, cgId, priority, locTitle, title, poly, source, qaMode, customKeys, viewPoint,
+            code, cgId, priority, locTitle, title, cfg, source, qaMode, customKeys, viewPoint,
             lastTryDate != null ? dateFormat.format(lastTryDate) : "",
             date != null ? dateFormat.format(date) : "",
             version, usedTime);
@@ -228,7 +228,7 @@ public class MapConversionTask
     log.log(Level.INFO, "Start conversion for map {0} {1} {2}", new Object[]{code, title, sourceFileName});
 
     String dcmTitle = title.length() != 0 ? title : locTitle;
-    String polyFile = poly.length() != 0 ? poly : code;
+    String polyFile = code;
 
     int newVersion = version + 1;
 
@@ -242,7 +242,8 @@ public class MapConversionTask
             StringTools.quoteString(customKeys),
             StringTools.quoteString(viewPoint),
             Integer.toString(newVersion),
-            cgId);
+            cgId,
+            cfg);
 
     pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);
