@@ -45,7 +45,7 @@ public class InsideRule implements GeometryMatcher
 
     Collection<EntityArea> areas = areaRule.getAreas(geometry);
 
-    log.info("Entity " + entity + " area=" + area + " areas=" + areas);
+    log.fine("Entity " + entity + " area=" + area + " areas=" + areas);
 
     return Collections.singletonMap(area, areas);
   }

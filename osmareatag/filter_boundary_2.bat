@@ -1,2 +1,0 @@
-chcp 1251
-call osmosis --read-pbf europe-latest.osm.pbf --lp --tf accept-relations boundary=administrative --tf accept-relations admin_level=2 --used-way --used-node --write-xml europe-boundary-2.osm.bz2

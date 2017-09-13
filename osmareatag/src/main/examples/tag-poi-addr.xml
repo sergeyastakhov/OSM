@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tag-processing>
+  <area id="national-boundary" cache-file="national-boundary.idx">
+    <match type="relation">
+      <tag k="boundary" v="administrative"/>
+      <tag k="admin_level" v="2"/>
+    </match>
+  </area>
+  <area id="region-boundary">
+    <match type="relation">
+      <tag k="boundary" v="administrative"/>
+      <tag k="admin_level" v="4"/>
+    </match>
+  </area>
+  <area id="place">
+    <match>
+      <tag k="place" v="city|town|village|hamlet|isolated_dwelling|allotments"/>
+    </match>
+  </area>
+  <area id="addr-building">
+    <match>
+      <tag k="building" v=".*"/>
+      <tag k="addr:housenumber" v=".*"/>
+    </match>
+  </area>
+
+  <transform>
+    <name>POI Addresses</name>
+    <match type="node">
+      <tag k="amenity|shop" v=".*"/>
+      <inside area="national-boundary"/>
+      <inside area="region-boundary"/>
+      <inside area="place"/>
+      <inside area="addr-building"/>
+    </match>
+    <output>
+      <add-tag k="addr:country" v="${ISO3166-1}" context-area="national-boundary"/>
+      <add-tag k="addr:region" v="${name}" context-area="region-boundary"/>
+      <add-tag k="addr:city" v="${name}" context-area="place"/>
+      <add-tag k="addr:street" v="${addr:street}" context-area="addr-building"/>
+      <add-tag k="addr:housenumber" v="${addr:housenumber}" context-area="addr-building"/>
+    </output>
+  </transform>
+</tag-processing>

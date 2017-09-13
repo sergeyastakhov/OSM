@@ -129,7 +129,7 @@ public class AreaRule extends MatchOwner implements Initializable
 
             int numGeometries = collection.getNumGeometries();
 
-            log.info("Adding entity " + entity + " name=" + tags.get("name") + " (" + numGeometries + " components) to the index " + id);
+            log.fine("Adding entity " + entity + " name=" + tags.get("name") + " (" + numGeometries + " components) to the index " + id);
 
             for( int i = 0; i < numGeometries; i++ )
             {
