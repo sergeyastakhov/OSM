@@ -28,6 +28,8 @@ public class OSMRoutingPlugin implements PluginLoader
 
     map.put("directed-graph-lines", new DirectedGraphLinesTaskFactory());
 
+    map.put("directed-railway-graph-lines", new DirectedRailwayGraphLinesTaskFactory());
+
     return map;
   }
 }

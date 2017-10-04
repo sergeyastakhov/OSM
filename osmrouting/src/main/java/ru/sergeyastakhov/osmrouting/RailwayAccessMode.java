@@ -1,7 +1,7 @@
 /**
- * $Id$
- *
- * Copyright (C) 2012 Sergey Astakhov. All Rights Reserved
+ * RailwayAccessMode.java
+ * <p/>
+ * Copyright (C) 2017 RNIC. All Rights Reserved
  */
 package ru.sergeyastakhov.osmrouting;
 
@@ -12,36 +12,23 @@ import java.util.Map;
  * @author Sergey Astakhov
  * @version $Revision$
  */
-public enum AccessMode
+public enum RailwayAccessMode
 {
   ACCESS(null),
-  FOOT(ACCESS),
-  VEHICLE(ACCESS),
-  BICYCLE(VEHICLE),
-  MOTOR_VEHICLE(VEHICLE),
-  MOTORCYCLE(MOTOR_VEHICLE),
-  MOPED(MOTOR_VEHICLE),
-  MOTORCAR(MOTOR_VEHICLE),
-  PSV(MOTOR_VEHICLE),
-  BUS(PSV),
-  TAXI(PSV),
-  HGV(MOTOR_VEHICLE),
-  EMERGENCY(ACCESS);
+  TRAIN(ACCESS),
+  TRAM(ACCESS);
 
-  private AccessMode parent;
+  private RailwayAccessMode parent;
 
-  AccessMode(AccessMode _parent)
+  RailwayAccessMode(RailwayAccessMode _parent)
   {
     parent = _parent;
   }
 
   @Override
-  public String toString()
-  {
-    return name().toLowerCase();
-  }
+  public String toString() { return name().toLowerCase(); }
 
-  public static AccessMode fromString(String name)
+  public static RailwayAccessMode fromString(String name)
   {
     try
     {
@@ -53,19 +40,19 @@ public enum AccessMode
     }
   }
 
-  public static Map<AccessMode, String> restrictTags
-     (Map<AccessMode, String> accessMap, Map<AccessMode, Boolean> restrictions)
+  public static Map<RailwayAccessMode, String> restrictTags
+      (Map<RailwayAccessMode, String> accessMap, Map<RailwayAccessMode, Boolean> restrictions)
   {
-    Map<AccessMode, String> resultAccessMap = new EnumMap<>(AccessMode.class);
+    Map<RailwayAccessMode, String> resultAccessMap = new EnumMap<>(RailwayAccessMode.class);
 
-    for( Map.Entry<AccessMode, Boolean> entry : restrictions.entrySet() )
+    for( Map.Entry<RailwayAccessMode, Boolean> entry : restrictions.entrySet() )
     {
       resultAccessMap.put(entry.getKey(), entry.getValue() ? "yes": "no");
     }
 
-    for( Map.Entry<AccessMode, String> entry : accessMap.entrySet() )
+    for( Map.Entry<RailwayAccessMode, String> entry : accessMap.entrySet() )
     {
-      AccessMode accessMode = entry.getKey();
+      RailwayAccessMode accessMode = entry.getKey();
       String accessValue = entry.getValue();
 
       String newAccessValue = accessMode.restrictBy(accessValue, restrictions);
@@ -76,11 +63,11 @@ public enum AccessMode
     return resultAccessMap;
   }
 
-  private String restrictBy(String accessValue, Map<AccessMode, Boolean> restrictions)
+  private String restrictBy(String accessValue, Map<RailwayAccessMode, Boolean> restrictions)
   {
-    for( Map.Entry<AccessMode, Boolean> entry : restrictions.entrySet() )
+    for( Map.Entry<RailwayAccessMode, Boolean> entry : restrictions.entrySet() )
     {
-      AccessMode mode = entry.getKey();
+      RailwayAccessMode mode = entry.getKey();
       boolean allowed = entry.getValue();
 
       if( !allowed && mode.isEqualsOrParentFor(this) )
@@ -92,7 +79,7 @@ public enum AccessMode
     return accessValue;
   }
 
-  public boolean isEqualsOrParentFor(AccessMode accessMode)
+  public boolean isEqualsOrParentFor(RailwayAccessMode accessMode)
   {
     while( accessMode!=null )
     {
@@ -105,14 +92,14 @@ public enum AccessMode
     return false;
   }
 
-  public boolean hasAnySubModeAccess(Map<AccessMode, String> accessMap)
+  public boolean hasAnySubModeAccess(Map<RailwayAccessMode, String> accessMap)
   {
     boolean hasAccess = false;
     boolean hasRestriction = false;
 
-    for( Map.Entry<AccessMode, String> entry : accessMap.entrySet() )
+    for( Map.Entry<RailwayAccessMode, String> entry : accessMap.entrySet() )
     {
-      AccessMode accessMode = entry.getKey();
+      RailwayAccessMode accessMode = entry.getKey();
       String accessValue = entry.getValue();
 
       boolean allow = !accessValue.equals("no");
