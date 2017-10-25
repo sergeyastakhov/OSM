@@ -302,7 +302,7 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
       String key = tag.getKey();
       String value = tag.getValue();
 
-      if( key.equals("type") && value.equals("restriction") )
+      if( key.equals("type") && value.startsWith("restriction") )
       {
         routingRelations.add(relationContainer);
         break;

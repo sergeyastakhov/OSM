@@ -6,10 +6,10 @@
 package ru.sergeyastakhov.osmrouting;
 
 import org.openstreetmap.osmosis.core.container.v0_6.*;
-import org.openstreetmap.osmosis.core.domain.v0_6.CommonEntityData;
-import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
-import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.core.domain.v0_6.*;
+import org.openstreetmap.osmosis.core.lifecycle.ReleasableIterator;
+import org.openstreetmap.osmosis.core.store.SimpleObjectStore;
+import org.openstreetmap.osmosis.core.store.SingleClassObjectSerializationFactory;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.core.task.v0_6.SinkSource;
 
@@ -26,6 +26,11 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
 
   private Sink sink;
 
+  private SimpleObjectStore<RelationContainer> allRelations;
+
+  private Map<Long, IdReplacement> fromWayIdReplacement = new HashMap<>();
+  private Map<Long, IdReplacement> toWayIdReplacement = new HashMap<>();
+
   private IdFactory wayIdFactory = EntityIdFactory.wayIdFactory;
 
   private AccessMode graphMinimumAccess;
@@ -36,7 +41,13 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void initialize(Map<String, Object> metaData) { sink.initialize(metaData); }
+  public void initialize(Map<String, Object> metaData)
+  {
+    allRelations = new SimpleObjectStore<>(
+        new SingleClassObjectSerializationFactory(RelationContainer.class), "dglt_rl", true);
+
+    sink.initialize(metaData);
+  }
 
   @Override
   public void setSink(Sink _sink)
@@ -53,12 +64,80 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
   @Override
   public void complete()
   {
+    ReleasableIterator<RelationContainer> relationIterator = allRelations.iterate();
+
+    while( relationIterator.hasNext() )
+    {
+      RelationContainer relationContainer = relationIterator.next();
+
+      Relation relation = relationContainer.getEntity();
+
+      // Replace way id in restrictions
+
+      RelationMember viaNode = null;
+
+      for( RelationMember member : relation.getMembers() )
+      {
+        String role = member.getMemberRole();
+
+        if( role.equals("via") && member.getMemberType() == EntityType.Node )
+          viaNode = member;
+      }
+
+      if( viaNode != null )
+      {
+        long viaNodeId = viaNode.getMemberId();
+
+        if( fromWayIdReplacement.containsKey(viaNodeId) || toWayIdReplacement.containsKey(viaNodeId) )
+        {
+          relation = relation.getWriteableInstance();
+
+          List<RelationMember> members = relation.getMembers();
+
+          for( int i = 0; i < members.size(); i++ )
+          {
+            RelationMember member = members.get(i);
+
+            if( member.getMemberType() == EntityType.Way )
+            {
+              String role = member.getMemberRole();
+
+              IdReplacement idReplacement = null;
+
+              if( role.equals("from") )
+              {
+                idReplacement = fromWayIdReplacement.get(viaNodeId);
+              }
+              else
+              if( role.equals("to") )
+              {
+                idReplacement = toWayIdReplacement.get(viaNodeId);
+              }
+
+              if( idReplacement!=null && member.getMemberId() == idReplacement.originalId )
+                members.set(i, new RelationMember(idReplacement.newId, member.getMemberType(), role));
+            }
+          }
+
+          relationContainer = new RelationContainer(relation);
+        }
+      }
+
+      sink.process(relationContainer);
+    }
+
+    relationIterator.release();
+
+    allRelations.complete();
+
     sink.complete();
   }
 
   @Override
   public void release()
   {
+    allRelations.release();
+
     sink.release();
   }
 
@@ -236,6 +315,14 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
       fillTagsFromMap(returnLine.getTags(), returnLineTagsMap);
 
       sink.process(new WayContainer(returnLine));
+
+      IdReplacement idReplacement = new IdReplacement(directLine.getId(), returnLine.getId());
+
+      WayNode firstNode = wayNodeList.get(0);
+      toWayIdReplacement.put(firstNode.getNodeId(), idReplacement);
+
+      WayNode lastNode = wayNodeList.get(wayNodeList.size()-1);
+      fromWayIdReplacement.put(lastNode.getNodeId(), idReplacement);
     }
   }
 

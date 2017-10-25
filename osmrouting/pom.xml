@@ -7,7 +7,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ru.sergeyastakhov.osmrouting</groupId>
   <artifactId>osmrouting</artifactId>
-  <version>1.6</version>
+  <version>1.7</version>
 
   <developers>
     <developer>
