@@ -2,7 +2,7 @@
 
 <!DOCTYPE plugin PUBLIC "-//JPF//Java Plug-in Manifest 1.0" "http://jpf.sourceforge.net/plugin_1_0.dtd">
 
-<plugin id="OSMAreaTag" version="1.1">
+<plugin id="OSMAreaTag" version="1.2">
 
   <requires>
     <import plugin-id="org.openstreetmap.osmosis.core.plugin.Core"
@@ -10,7 +10,7 @@
   </requires>
 
   <runtime>
-    <library id="code" path="osmareatag-1.1.jar" type="code"/>
+    <library id="code" path="osmareatag-1.2.jar" type="code"/>
 
     <library id="lib-jts" path="lib/jts-1.13.jar" type="code"/>
   </runtime>
