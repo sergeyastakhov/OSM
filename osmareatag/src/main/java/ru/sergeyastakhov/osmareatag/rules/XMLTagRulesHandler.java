@@ -100,6 +100,15 @@ public class XMLTagRulesHandler extends DefaultHandler
           outputRule.add(new AddTagRule(key, value, contextArea));
         }
         break;
+      case "set-tag":
+        if( outputRule != null )
+        {
+          String key = attributes.getValue("k");
+          String value = attributes.getValue("v");
+          String contextArea = attributes.getValue("context-area");
+          outputRule.add(new SetTagRule(key, value, contextArea));
+        }
+        break;
     }
   }
 
