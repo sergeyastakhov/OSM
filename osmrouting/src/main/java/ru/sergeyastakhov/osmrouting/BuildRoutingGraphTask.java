@@ -137,9 +137,9 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
       sink.process(nodeContainer);
     }
 
-    nodeIterator.release();
+    nodeIterator.close();
 
-    allNodes.release();
+    allNodes.close();
 
     requiredNodes = null;
 
@@ -188,9 +188,9 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
       outputWays.set(way.getId());
     }
 
-    wayIterator.release();
+    wayIterator.close();
 
-    routingWays.release();
+    routingWays.close();
 
     log.info("Send on all required relations");
 
@@ -217,9 +217,9 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
       }
     }
 
-    relationIterator.release();
+    relationIterator.close();
 
-    routingRelations.release();
+    routingRelations.close();
 
     log.info("Sending complete.");
 
@@ -227,10 +227,7 @@ public class BuildRoutingGraphTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void release()
-  {
-    sink.release();
-  }
+  public void close() { sink.close(); }
 
   @Override
   public void setSink(Sink _sink)

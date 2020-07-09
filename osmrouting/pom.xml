@@ -7,7 +7,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>ru.sergeyastakhov.osmrouting</groupId>
   <artifactId>osmrouting</artifactId>
-  <version>1.7</version>
+  <version>1.8</version>
 
   <developers>
     <developer>
@@ -36,7 +36,8 @@
     <dependency>
       <groupId>org.openstreetmap.osmosis</groupId>
       <artifactId>osmosis-core</artifactId>
-      <version>0.45</version>
+      <version>0.48.1</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>

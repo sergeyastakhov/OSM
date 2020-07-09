@@ -126,7 +126,7 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
       sink.process(relationContainer);
     }
 
-    relationIterator.release();
+    relationIterator.close();
 
     allRelations.complete();
 
@@ -134,11 +134,11 @@ public class DirectedGraphLinesTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void release()
+  public void close()
   {
-    allRelations.release();
+    allRelations.close();
 
-    sink.release();
+    sink.close();
   }
 
   @Override

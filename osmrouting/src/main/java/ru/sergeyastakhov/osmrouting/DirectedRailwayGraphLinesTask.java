@@ -56,9 +56,9 @@ public class DirectedRailwayGraphLinesTask implements SinkSource, EntityProcesso
   }
 
   @Override
-  public void release()
+  public void close()
   {
-    sink.release();
+    sink.close();
   }
 
   @Override

@@ -140,7 +140,7 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
       }
     }
 
-    wayIterator.release();
+    wayIterator.close();
 
     allWays.complete();
 
@@ -198,7 +198,7 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
       sink.process(relationContainer);
     }
 
-    relationIterator.release();
+    relationIterator.close();
 
     allRelations.complete();
 
@@ -206,15 +206,15 @@ public class SplitRoutingGraphTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void release()
+  public void close()
   {
-    allWays.release();
-    allRelations.release();
+    allWays.close();
+    allRelations.close();
 
     nodeWayUsages.clear();
     wayIdReplacement.clear();
 
-    sink.release();
+    sink.close();
   }
 
   @Override

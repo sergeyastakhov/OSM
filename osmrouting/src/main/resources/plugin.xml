@@ -2,11 +2,11 @@
 
 <!DOCTYPE plugin PUBLIC "-//JPF//Java Plug-in Manifest 1.0" "http://jpf.sourceforge.net/plugin_1_0.dtd">
 
-<plugin id="OSMRouting" version="1.7">
+<plugin id="OSMRouting" version="1.8">
 
   <requires>
     <import plugin-id="org.openstreetmap.osmosis.core.plugin.Core"
-            plugin-version="0.43" reverse-lookup="false"/>
+            plugin-version="0.46" reverse-lookup="false"/>
   </requires>
 
   <runtime>
