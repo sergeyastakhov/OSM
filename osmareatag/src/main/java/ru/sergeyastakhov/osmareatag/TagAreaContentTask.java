@@ -192,7 +192,7 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
         sink.process(nodeContainer);
       }
 
-      nodeIterator.release();
+      nodeIterator.close();
 
       ReleasableIterator<WayContainer> wayIterator = allWays.iterate();
       while( wayIterator.hasNext() )
@@ -215,7 +215,7 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
         sink.process(wayContainer);
       }
 
-      wayIterator.release();
+      wayIterator.close();
 
 
       ReleasableIterator<RelationContainer> relationIterator = allRelations.iterate();
@@ -248,28 +248,28 @@ public class TagAreaContentTask implements SinkSource, EntityProcessor
         sink.process(relationContainer);
       }
 
-      relationIterator.release();
+      relationIterator.close();
 
       log.info("Sending complete.");
     }
 
-    nodeReader.release();
-    wayReader.release();
+    nodeReader.close();
+    wayReader.close();
 
     sink.complete();
   }
 
   @Override
-  public void release()
+  public void close()
   {
-    sink.release();
+    sink.close();
 
-    indexedNodes.release();
-    indexedWays.release();
+    indexedNodes.close();
+    indexedWays.close();
 
-    allNodes.release();
-    allWays.release();
-    allRelations.release();
+    allNodes.close();
+    allWays.close();
+    allRelations.close();
   }
 
   @Override

@@ -82,9 +82,9 @@ public class AreaRule extends MatchOwner implements Initializable
   }
 
   @Override
-  public void release()
+  public void close()
   {
-    areaEntities.release();
+    areaEntities.close();
     areaIndex = null;
     indexLoaded = false;
   }
@@ -156,7 +156,7 @@ public class AreaRule extends MatchOwner implements Initializable
       }
     }
 
-    areaEntityIterator.release();
+    areaEntityIterator.close();
 
     areaIndex.build();
 

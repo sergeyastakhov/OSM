@@ -53,11 +53,11 @@ public class TagProcessing implements Initializable
   }
 
   @Override
-  public void release()
+  public void close()
   {
     for( AreaRule areaRule : areaRuleMap.values() )
     {
-      areaRule.release();
+      areaRule.close();
     }
   }
 

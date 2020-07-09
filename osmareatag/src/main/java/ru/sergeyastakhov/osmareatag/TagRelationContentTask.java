@@ -5,16 +5,9 @@
  */
 package ru.sergeyastakhov.osmareatag;
 
-import com.vividsolutions.jts.geom.*;
-import com.vividsolutions.jts.index.strtree.STRtree;
 import org.openstreetmap.osmosis.core.container.v0_6.*;
 import org.openstreetmap.osmosis.core.domain.v0_6.*;
-import org.openstreetmap.osmosis.core.filter.common.IdTracker;
-import org.openstreetmap.osmosis.core.filter.common.IdTrackerFactory;
-import org.openstreetmap.osmosis.core.filter.common.IdTrackerType;
 import org.openstreetmap.osmosis.core.lifecycle.ReleasableIterator;
-import org.openstreetmap.osmosis.core.store.IndexedObjectStore;
-import org.openstreetmap.osmosis.core.store.IndexedObjectStoreReader;
 import org.openstreetmap.osmosis.core.store.SimpleObjectStore;
 import org.openstreetmap.osmosis.core.store.SingleClassObjectSerializationFactory;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
@@ -158,7 +151,7 @@ public class TagRelationContentTask implements SinkSource, EntityProcessor
       sink.process(wayContainer);
     }
 
-    wayIterator.release();
+    wayIterator.close();
 
 
     ReleasableIterator<RelationContainer> relationIterator = allRelations.iterate();
@@ -169,7 +162,7 @@ public class TagRelationContentTask implements SinkSource, EntityProcessor
       sink.process(relationContainer);
     }
 
-    relationIterator.release();
+    relationIterator.close();
 
     log.info("Sending complete.");
 
@@ -246,12 +239,12 @@ public class TagRelationContentTask implements SinkSource, EntityProcessor
   }
 
   @Override
-  public void release()
+  public void close()
   {
-    sink.release();
+    sink.close();
 
-    allWays.release();
-    allRelations.release();
+    allWays.close();
+    allRelations.close();
 
     wayIdToRelationsMap = null;
   }
